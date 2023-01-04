@@ -45,11 +45,13 @@ nki_qc <- readxl::read_xlsx('./data/WES/20221102_DCIS_Precision_WES_sampleInfo_b
 nki_qc <- nki_qc[!(nki_qc$note %in% c("No sample of primary DCIS, only DCIS recurrence.", "\"not usable\"")),] # remove not usable samples
 duke_qc <- readxl::read_xlsx('./data/WES/20221102_DCIS_Precision_WES_sampleInfo_by_XiaogangWu.xlsx', sheet = 'Duke')
 
-wes_qc <- rbind(sloane_qc[,1:20], nki_qc[,1:20], duke_qc[,1:20])
 
 # Perform QC (Total reads >= 10M AND median target coverage >= 40 for normal and >= 80 for tumor samples)
 wes_qc$qc <- ifelse(wes_qc$`total_reads(million)` >= 10 & wes_qc$tissue_pathology == 'Normal' & wes_qc$median_Target_Cov >= 40, 'pass', 
                 ifelse(wes_qc$`total_reads(million)` >= 10 & wes_qc$tissue_pathology != 'Normal' & wes_qc$median_Target_Cov >= 80, 'pass', 'fail'))
+
+#add exception for DCIS00402, ceiling
+wes_qc$qc[wes_qc$sampleid == 'DCIS00402Normal-N'] <- 'pass'
 
 # change id for icicle sample
 wes_qc$precision_patient_id <- ifelse(wes_qc$precision_patient_id %in% c('IT02006 IR', 'IT02006 N', 'IT02006 P'), 'IT02006', wes_qc$precision_patient_id)
@@ -128,10 +130,10 @@ openclinica <- openclinica[openclinica$qc_normal == 'pass' & openclinica$qc_pdci
 # Load Mutect WES data -----------------------------------------------------
 
 # read tsv file
-df_duke <- read_mutect("./data/WES/DCIS_Precision_WES_Duke/mutect", source = 'Duke', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'Duke1'])
-df_nki <- read_mutect("./data/WES/DCIS_Precision_WES_NKI/mutect", source = 'NKI', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('NKI1', 'NKI2', 'NKI3', 'NKI4')])
-df_sloane <- read_mutect("./data/WES/DCIS_Precision_WES_SLO/mutect", source = 'SLO', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('SLO1', 'SLO2')])
-df_melbourne <- read_mutect("./data/WES/DCIS_Precision_WES_SLO3/mutect", source = 'SLO3', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'SLO3'])
+df_duke <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/Duke_mutect_pindel/Duke/mutect", source = 'Duke', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'Duke1'])
+df_nki <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/NKI_mutect_pindel/NKI/mutect", source = 'NKI', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('NKI1', 'NKI2', 'NKI3', 'NKI4')])
+df_sloane <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/SLO_mutect_pindel/SLO/mutect", source = 'SLO', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('SLO1', 'SLO2')])
+df_melbourne <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/SLO3_mutect_pindel/SLO3/mutect", source = 'SLO3', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'SLO3'])
 
 # merge data
 df_mrg <- rbind(df_duke, df_nki, df_sloane, df_melbourne); dim(df_mrg)
@@ -199,10 +201,10 @@ write.table(df_mrg6, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.txt', s
 # Load Pindel WES data -----------------------------------------------------
 
 # read tsv file
-df_duke <- read_mutect("./data/WES/DCIS_Precision_WES_Duke/pindel", source = 'Duke', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'Duke1'])
-df_nki <- read_mutect("./data/WES/DCIS_Precision_WES_NKI/pindel", source = 'NKI', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('NKI1', 'NKI2', 'NKI3', 'NKI4')])
-df_sloane <- read_mutect("./data/WES/DCIS_Precision_WES_SLO/pindel", source = 'SLO', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('SLO1', 'SLO2')])
-df_melbourne <- read_mutect("./data/WES/DCIS_Precision_WES_SLO3/pindel", source = 'SLO3', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'SLO3'])
+df_duke <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/Duke_mutect_pindel/Duke/pindel", source = 'Duke', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'Duke1'])
+df_nki <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/NKI_mutect_pindel/NKI/pindel", source = 'NKI', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('NKI1', 'NKI2', 'NKI3', 'NKI4')])
+df_sloane <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/SLO_mutect_pindel/SLO/pindel", source = 'SLO', pattern = openclinica$sample_name_pdcis[openclinica$batch %in% c('SLO1', 'SLO2')])
+df_melbourne <- read_mutect("/mnt/albyn/maria/prj_precision/wes/vcf_annovar/SLO3_mutect_pindel/SLO3/pindel", source = 'SLO3', pattern = openclinica$sample_name_pdcis[openclinica$batch == 'SLO3'])
 
 # merge data
 df_indels <- rbind(df_duke, df_nki, df_sloane, df_melbourne); dim(df_indels)
