@@ -1,61 +1,27 @@
+# Maria Roman Escorza - 2022 11 30 
+
+# Load libraries and data path --------------------------------------------
+
 library(dplyr)
 library(data.table)
 
-GetCosmicNumber <- function(x)
-{
-  x <- sapply(x,function(z){
-    if (is.na(z))
-    {
-      return(0)
-    }
-    else if (z==".")
-    {
-      return(0)
-    }
-    else
-    {
-      z <- strsplit(z,"=")[[1]][3]
-      z <- strsplit(z,",")[[1]]
-      sum <- 0
-      for (i in 1:length(z))
-      {
-        foo <- strsplit(z[i],"\\(")[[1]]
-        sum <- sum + as.numeric(foo[1])
-      }
-      return(sum)
-    }
-  }) 
-  return(as.numeric(x))
-}
-
-MyNumeric <- function(x)
-{
-  x <- sapply(x,function(z){
-    if (z==".")
-    {
-      return(0)
-    }
-    else
-    {
-      return(as.numeric(z))
-    }
-  }) 
-  return(as.numeric(x))
-}
-
 setwd('/mnt/albyn/maria/precision_mutation')
 
+source('./lib/readMetadata.R')
+source('./lib/MyNumeric.R')
+
+openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
+panel_datapath <- './data/Panel/DCIS_Precision_Panel_KCL'
+mapping_datapath <- '/mnt/albyn/maria/master/Sloane-project-samples-MASTER-sheet-May-2022.xlsx'
+
 # read openclinica master sheet
-openclinica <- as.data.frame(readxl::read_xlsx('./data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx')); dim(openclinica)
-openclinica2 <- as.data.frame(readxl::read_xlsx('./data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx', sheet = 2))
-openclinica2 <- openclinica2[openclinica2$redcap_event == 'PRI',]
-openclinica <- as.data.frame(merge(openclinica, openclinica2)); dim(openclinica)
+openclinica <- readMetadata(openclinica_datapath)
 openclinica$batch <- substr(openclinica$patient_id, start = 1, stop = 7)
 openclinica <- openclinica[openclinica$batch == 'PRE_SLO',]
 openclinica <- openclinica[openclinica$panel == 1,]; dim(openclinica)
 
 # map sloane and precision ids
-mapping_file <- readxl::read_xlsx('/mnt/albyn/maria/master/Sloane-project-samples-MASTER-sheet-May-2022.xlsx', sheet = 2)
+mapping_file <- readxl::read_xlsx(mapping_datapath, sheet = 2)
 mapping_file <- as.data.frame(mapping_file[!(mapping_file$Tissue %in% c('Normal', 'DCIS recurrence', 'Inv recurrence', 'Inv recurrence Tubular', 'Inv recurrence NST', 'Inv recurrence 2')) 
                                & !is.na(mapping_file$'ng SureSelect'),]); dim(mapping_file)
 ifelse ( length(unique(mapping_file$'DNA-Short')[!(unique(mapping_file$'DNA-Short') %in% unique(openclinica$panel_id))]) == 0, 'Everything okay', stop('Missing samples in openclinica')) # check if any sequenced sample is missing in openclinica
@@ -66,7 +32,7 @@ rownames(openclinica) <- openclinica$'Sloane ID'
 # Load Sloane data --------------------------------------------------------
 
 # read kcl panel seq cases and controls 
-files <- list.files('./data/Panel/DCIS_Precision_Panel_KCL', pattern = '*_bcf_processed.vcf.hg19_multianno.txt', full.names = T)
+files <- list.files(panel_datapath, pattern = '*_bcf_processed.vcf.hg19_multianno.txt', full.names = T)
 samples <- gsub("\\_.*","",gsub(".*/","",files))
 ifelse ( length(samples[!(samples %in% unique(openclinica$'Sloane ID'))]) == 0, 'Everything okay', stop('Missing samples in openclinica')) # check if any sequenced sample is missing in openclinica
 
@@ -146,6 +112,3 @@ ifelse(length(Ind) %in% length(unique(mafMat$patient_id)), 'Everything is okay',
 # export filtered mutations
 saveRDS(mafMat, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect_Filtered.rds')
 write.table(mafMat, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
-
-
-

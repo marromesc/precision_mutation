@@ -1,68 +1,31 @@
+# Maria Roman Escorza - 2022 11 30 
+
+# Load libraries and data path --------------------------------------------
+
 library(dplyr)
 library(readr)
 library(liftOver)
 
-GetCosmicNumber <- function(x)
-{
-  x <- sapply(x,function(z){
-    if (is.na(z))
-    {
-      return(0)
-    }
-    else if (z==".")
-    {
-      return(0)
-    }
-    else
-    {
-      z <- strsplit(z,"=")[[1]][3]
-      z <- strsplit(z,",")[[1]]
-      sum <- 0
-      for (i in 1:length(z))
-      {
-        foo <- strsplit(z[i],"\\(")[[1]]
-        sum <- sum + as.numeric(foo[1])
-      }
-      return(sum)
-    }
-  }) 
-  return(as.numeric(x))
-}
-
-MyNumeric <- function(x)
-{
-  x <- sapply(x,function(z){
-    if ((z=="." | is.na(z) | z == 'NA'))
-    {
-      return(0)
-    }
-    else
-    {
-      return(as.numeric(z))
-    }
-  }) 
-  return(as.numeric(x))
-}
-
 setwd('/mnt/albyn/maria/precision_mutation')
 
+source('./lib/readMetadata.R')
+
+openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
+panel_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/Compiled_mutations_nki.xlsx'
+
 # read openclinica master sheet
-openclinica <- as.data.frame(readxl::read_xlsx('./data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx')); dim(openclinica)
-openclinica2 <- as.data.frame(readxl::read_xlsx('./data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx', sheet = 2))
-openclinica2 <- openclinica2[openclinica2$redcap_event == 'PRI',]
-openclinica <- as.data.frame(merge(openclinica, openclinica2)); dim(openclinica)
+openclinica <- readMetadata(openclinica_datapath)
 openclinica$batch <- substr(openclinica$patient_id, start = 1, stop = 7)
 openclinica <- openclinica[openclinica$batch == 'PRE_NKI',]
 openclinica <- openclinica[openclinica$panel == 1,]
 write.table(openclinica, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 
-# Load NKI data --------------------------------------------------------
+# Load NKI data -----------------------------------------------------------
 
-df <- as.data.frame(readxl::read_xlsx('./data/Panel/DCIS_Precision_Panel_NKI/Compiled_mutations_nki.xlsx'))
-dim(df)
+df <- as.data.frame(readxl::read_xlsx(panel_datapath))
 
-openclinica <- openclinica[openclinica$first_subseq_event %in% c('ipsilateral DCIS', 'ipsilateral IBC', 'death', 'NA') & openclinica$panel == 1,]; dim(openclinica)
+openclinica <- openclinica[openclinica$panel == 1,]; dim(openclinica)
 df <- df[df$sample_ID_DCIS %in% openclinica$panel_id,]; dim(df)
 
 df <- merge(df, openclinica, by.x = 'sample_ID_DCIS', by.y = 'panel_id'); dim(df)
