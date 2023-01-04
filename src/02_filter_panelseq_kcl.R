@@ -9,6 +9,7 @@ setwd('/mnt/albyn/maria/precision_mutation')
 
 source('./lib/readMetadata.R')
 source('./lib/MyNumeric.R')
+source('./lib/GetCosmicNumber.R')
 
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 panel_datapath <- './data/Panel/DCIS_Precision_Panel_KCL'
@@ -41,7 +42,7 @@ openclinica$`Sloane ID`[!(openclinica$`Sloane ID` %in% samples)] # remaining sam
 openclinica <- openclinica[samples,]; dim(openclinica)
 write.table(openclinica, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_Panel_Sloane_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
-Ind <- which(openclinica$first_subseq_event %in% c('death', 'NA', 'ipsilateral DCIS', 'ipsilateral IBC'))
+Ind <- which(openclinica$first_subseq_event %in% c('death', 'NA', 'ipsilateral DCIS', 'ipsilateral IBC') & openclinica$surgery_final == 'BCS')
 
 mafMat <- lapply(files[Ind], fread)
 

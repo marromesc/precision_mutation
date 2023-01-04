@@ -104,7 +104,7 @@ openclinica <- openclinica[!(is.na(openclinica$sampleid_normal) | is.na(openclin
 write.table(openclinica, './data/WES/DCIS_Precision_WES_All_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter cases and controls
-openclinica <- openclinica[openclinica$first_subseq_event %in% c('ipsilateral DCIS', 'ipsilateral IBC', 'NA', 'death'),]; dim(openclinica)
+openclinica <- openclinica[openclinica$first_subseq_event %in% c('ipsilateral DCIS', 'ipsilateral IBC', 'NA', 'death') & openclinica$surgery_final == 'BCS',]; dim(openclinica)
 
 # filter samples which passed qc
 openclinica <- openclinica[openclinica$qc_normal == 'pass' & openclinica$qc_pdcis == 'pass',]; dim(openclinica)

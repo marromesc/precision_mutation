@@ -9,6 +9,8 @@ library(liftOver)
 setwd('/mnt/albyn/maria/precision_mutation')
 
 source('./lib/readMetadata.R')
+source('./lib/MyNumeric.R')
+source('./lib/GetCosmicNumber.R')
 
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 panel_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/Compiled_mutations_nki.xlsx'
@@ -114,7 +116,7 @@ df9 <- df8[(as.numeric(df8$vaf_DCIS_DNA)/100) >= 0.05,]; dim(df9)
 # rename mutations
 df9$Consequence[df9$Consequence %in% c(".", 'splice_acceptor_variant', 'splice_donor_variant')] <- "splicing"
 df9$Consequence[df9$Consequence %in% c("nonsynonymous SNV", "missense_variant", 'missense_variant&splice_region_variant')] <- "missense"
-  df9$Consequence[df9$Consequence %in% c("nonframeshift_deletion","nonframeshift_insertion","nonframeshift_substitution", 'inframe_insertion','inframe_deletion')] <- "inframe_indel"
+df9$Consequence[df9$Consequence %in% c("nonframeshift_deletion","nonframeshift_insertion","nonframeshift_substitution", 'inframe_insertion','inframe_deletion')] <- "inframe_indel"
 df9$Consequence[df9$Consequence %in% c("frameshift deletion","frameshift insertion","frameshift substitution", "frameshift_variant")] <- "frameshift"
 df9$Consequence[df9$Consequence %in% c("stopgain","stoploss","startgain","startloss", "stop_gained")] <- "nonsense"
 
