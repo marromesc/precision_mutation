@@ -126,7 +126,7 @@ write.csv(fishertest, './results/come_fisher_test.csv', quote = F, row.names = F
 
 # Set up copy number data + mutations --------------------------------------
 
-geneMatrixCN <- addCN2Muts(gisticRegs=gisticRegs, geneMatrix=t(geneMatrix), SampleSheet_CN=SampleSheet_CN)
+geneMatrixCN <- t(addCN2Muts(gisticRegs=gisticRegs, geneMatrix=t(geneMatrix), SampleSheet_CN=SampleSheet_CN))
 events <- discover.matrix(geneMatrixCN)
 subset <- rowSums(geneMatrixCN) > 3 # remove mutations affecting less than 3 samples
 
