@@ -8,7 +8,7 @@ readMutect <- function(datapath, source, pattern = NULL){
   
   datlist = list()
   for(i in 1:length(ls.files)){
-    #message(ls.files[i])
+    message(i, ' out of ', length(ls.files), ' ', paste0(ls.files[i]))
     if( file.info(ls.files[i])$size > 0 ){
       dat.mat <- read.delim2(file = ls.files[i]) %>% 
         tbl_df() %>% 
