@@ -11,7 +11,6 @@ library(circlize)
 
 
 source('./lib/somaticInteractions.R')
-source('./lib/addCN2Muts.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
