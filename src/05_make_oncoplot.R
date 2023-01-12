@@ -2,11 +2,11 @@
 
 # Load libraries and data path --------------------------------------------
 
+setwd('/mnt/albyn/maria/precision_mutation')
+
 library(collapse)
 library(ComplexHeatmap)
 library(data.table)
-
-setwd('/mnt/albyn/maria/precision_mutation')
 
 source('./lib/oncoPlotDetails.R')
 source('./lib/mutCountMatrix.R')

@@ -2,6 +2,8 @@
 
 # Load libraries and data path --------------------------------------------
 
+setwd('/mnt/albyn/maria/precision_mutation')
+
 library(tidyr)
 library(dplyr)
 library(stringr)
@@ -9,8 +11,6 @@ library(gridExtra)
 
 source('./lib/readMetadata.R')
 source('./lib/readMutect.R')
-
-setwd('/mnt/albyn/maria/precision_mutation')
 
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 qc_datapath <- './data/WES/20221102_DCIS_Precision_WES_sampleInfo_by_XiaogangWu.xlsx'
@@ -101,7 +101,7 @@ for (i in 1:nrow(openclinica)){
 
 # remove patients with no primary or normal
 openclinica <- openclinica[!(is.na(openclinica$sampleid_normal) | is.na(openclinica$sampleid_pdcis)),]; dim(openclinica)
-write.table(openclinica, './data/WES/DCIS_Precision_WES_All_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+write.table(openclinica, './Tables/WES/DCIS_Precision_WES_All_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter cases and controls
 openclinica <- openclinica[openclinica$first_subseq_event %in% c('ipsilateral DCIS', 'ipsilateral IBC', 'NA', 'death') & openclinica$surgery_final == 'BCS',]; dim(openclinica)

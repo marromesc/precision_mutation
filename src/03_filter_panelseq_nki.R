@@ -2,11 +2,11 @@
 
 # Load libraries and data path --------------------------------------------
 
+setwd('/mnt/albyn/maria/precision_mutation')
+
 library(dplyr)
 library(readr)
 library(liftOver)
-
-setwd('/mnt/albyn/maria/precision_mutation')
 
 source('./lib/readMetadata.R')
 source('./lib/MyNumeric.R')

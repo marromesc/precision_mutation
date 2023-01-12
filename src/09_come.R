@@ -1,8 +1,10 @@
-# Maria Roman Escorza - 2023 01 12 
+# Maria Roman Escorza - 2023 01 11  
 
 # Load libraries and data path --------------------------------------------
 
 setwd('/mnt/albyn/maria/precision_mutation')
+
+system('mkdir ./results/come/')
 
 library(discover)
 library(readr)
@@ -10,7 +12,6 @@ library(ComplexHeatmap)
 library(circlize)
 
 source('./lib/somaticInteractions.R')
-source('./lib/addCN2Muts.R')
 source('./lib/mutCountMatrix.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
@@ -31,12 +32,12 @@ oncogene <- read.csv(oncogene_datapath)
 ts <- read.csv(ts_datapath)
 
 
-# Set up copy number data + mutations --------------------------------------
+# Set up mutation data ----------------------------------------------------
 
-geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel)
-geneMatrixCN <- t(addCN2Muts(gisticRegs=gisticRegs, geneMatrix=geneMatrix, SampleSheet_CN=SampleSheet_CN))
-events <- discover.matrix(geneMatrixCN)
-subset <- rowSums(geneMatrixCN) > 3 # remove mutations affecting less than 3 samples
+geneMatrix <- t(mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T))
+
+events <- discover.matrix(geneMatrix)
+subset <- rowSums(geneMatrix) > 3 # remove mutations affecting less than 3 samples
 
 # We make a selection of genes that will be used in the pairwise co-occurrence and mutual exclusivity 
 # analyses. Genes are selected if they are (1) located in a recurrently altered copy number segment and 
@@ -72,7 +73,7 @@ result.mutex2 <- as.data.frame(result.mutex)
 
 #heatmap
 
-corMat <- cor(t(geneMatrixCN[subset,]), method = c("pearson", "kendall", "spearman")[1])*0
+corMat <- cor(t(geneMatrix[subset,]), method = c("pearson", "kendall", "spearman")[1])*0
 for (i in 1:nrow(corMat)) {
   for (j in 1:ncol(corMat)) {
     Ind <- which((result.mutex1$gene1==rownames(corMat)[i] & result.mutex1$gene2==colnames(corMat)[j]) | (result.mutex1$gene2==rownames(corMat)[i] & result.mutex1$gene1==colnames(corMat)[j]))
@@ -93,7 +94,7 @@ for (i in 1:nrow(corMat)) {
 #corMat <- corMat[,colSums(corMat) != 0]
 #corMat <- corMat[rowSums(corMat) != 0,]
 
-pdf('./results/come_DISCOVER_cn.pdf', width = 10, height = 10)
+pdf('./results/come/come_DISCOVER.pdf', width = 10, height = 10)
 Heatmap(corMat,       
         col=colorRamp2(c(-3,0,3), c("darkolivegreen", 'white', "chocolate1")),
         cluster_columns = F, 
@@ -113,10 +114,13 @@ dev.off()
 
 # Pairwise fisher test ----------------------------------------------------
 
-mutMat <- t(geneMatrixCN[subset,])
+mutMat <- t(geneMatrix[subset,])
 
-pdf('./results/come_fisher_cn.pdf')
-fishertest <- somaticInteractions(mutMat, geneOrder = rev(names(subset)[subset]))
+pdf('./results/come/come_fisher.pdf')
+fishertest <- somaticInteractions(mutMat)
 dev.off()
 
-write.table(fishertest, './results/come_fisher_test_cn.tsv', sep='\t', quote = F, row.names = F)
+write.table(fishertest, './results/come/come_fisher_test.tsv', sep = '\t',quote = F, row.names = F)
+
+
+

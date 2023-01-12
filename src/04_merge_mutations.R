@@ -2,13 +2,15 @@
 
 # Load libraries and data path --------------------------------------------
 
-library(data.table)
-
 setwd('/mnt/albyn/maria/precision_mutation')
+
+library(data.table)
 
 wes_meta_datapath <- './data/WES/DCIS_Precision_WES_All_Samples.txt'
 nki_panel_meta_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI_Samples.txt'
 slo_panel_meta_datapath <- './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_Panel_Sloane_Samples.txt'
+
+GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
 
 # Load sample metadata ----------------------------------------------------
@@ -107,10 +109,9 @@ eventDataFrame_nki_panel <- eventDataFrame_all
 eventDataFrame <- rbind(eventDataFrame_kcl_panel, eventDataFrame_nki_panel, eventDataFrame_wes)
 
 # filter mutations in panel genes
-GenesPanel <- readRDS('./data/GenesPanel.RDS')
 eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
 
-write.csv(eventDataFrame, './results/Filtered_Mutations_Compiled.csv')
+write.csv(eventDataFrame, './results/Filtered_Mutations_Compiled.csv', row.names = F)
 
 
 

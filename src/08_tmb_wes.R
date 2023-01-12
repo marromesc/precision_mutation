@@ -1,9 +1,14 @@
+# Maria Roman Escorza - 2022 12 
+
+# Load libraries and data path --------------------------------------------
+
+setwd('/mnt/albyn/maria/precision_mutation')
+system('mkdir ./results/tmb')
+
 library(maftools)
 library(ggplot2)
 library(ggpubr)
 
-setwd('/mnt/albyn/maria/precision_mutation')
-system('mkdir ./results/WES')
 
 # Load WES filtered mutations ---------------------------------------------
 
@@ -11,10 +16,10 @@ eventDataFrame_mutect <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filt
 eventDataFrame_indel <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds')
 
 eventDataFrame_mutect <- eventDataFrame_mutect[,c('gene.knowngene', 'chr', 'start', 'end', 'ref_allele', 'alt_allele',
-                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'precision_patient_id', 'first_subseq_event')]
+                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'patient_id', 'first_subseq_event')]
 
 eventDataFrame_indel <- eventDataFrame_indel[,c('gene.knowngene', 'chr', 'start', 'end', 'ref_allele', 'alt_allele',
-                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'precision_patient_id', 'first_subseq_event')]
+                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'patient_id', 'first_subseq_event')]
 
 eventDataFrame_all <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
 
@@ -52,11 +57,11 @@ maf_control <- read.maf(eventDataFrame_control)
 
 # Compute TMB -------------------------------------------------------------
 
-pdf('./results/WES/tmb_case.pdf')
+pdf('./results/tmb/tmb_case.pdf')
 tmb_case <- tmb(maf_case)
 dev.off()
 
-pdf('./results/WES/tmb_control.pdf')
+pdf('./results/tmb/tmb_control.pdf')
 tmb_control <- tmb(maf_control)
 dev.off()
 
@@ -64,7 +69,7 @@ tmb_case$case_control <- 'case'
 tmb_control$case_control <- 'control'
 tmb <- rbind(tmb_case, tmb_control)
 
-pdf('./results/WES/total_tmb.pdf', width = 4, height = 4, colormodel = "cmyk", useDingbats = TRUE)
+pdf('./results/tmb/total_tmb.pdf', width = 4, height = 4, colormodel = "cmyk", useDingbats = TRUE)
 ggplot(tmb, aes(x=case_control, y=total, color=case_control)) +
   geom_boxplot() +
   geom_point(aes(color = case_control), position = position_jitterdodge()) +
@@ -77,7 +82,7 @@ ggplot(tmb, aes(x=case_control, y=total, color=case_control)) +
   stat_summary(fun = mean, geom='point', fill = 'black', shape = 18, size = 3, color='black')
 dev.off() 
 
-pdf('./results/WES/total_perMB.pdf', width = 4, height = 4, colormodel = "cmyk", useDingbats = TRUE)
+pdf('./results/tmb/total_perMB.pdf', width = 4, height = 4, colormodel = "cmyk", useDingbats = TRUE)
 ggplot(tmb, aes(x=case_control, y=total_perMB, color=case_control)) +
   geom_boxplot() +
   geom_point(aes(color = case_control), position = position_jitterdodge()) +

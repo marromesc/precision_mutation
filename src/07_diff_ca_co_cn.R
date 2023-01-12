@@ -31,29 +31,29 @@ oncogene <- read.csv(oncogene_datapath)
 ts <- read.csv(ts_datapath)
 
 
-# Differential analysis ---------------------------------------------------
+# Set up copy number data + mutations --------------------------------------
 
 geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel)
-fisherTable <- diffMut(geneMatrix, SampleSheet)
-write.table(fisherTable, './results/diff_mut/diff_mut_overall.csv', sep = ',', row.names = F)
+geneMatrixCN <- addCN2Muts(gisticRegs, geneMatrix, SampleSheet_CN)
+fisherTable <- diffMut(geneMatrixCN, SampleSheet[SampleSheet$patient_id %in% rownames(geneMatrixCN),])
+write.table(fisherTable, './results/diff_mut/diff_mut_overall_CN.csv', sep = ',', row.names = F)
 
 #forest plot
 if (length(which(fisherTable$adjPval < 0.05))>0){
-  pdf('./results/diff_mut/diff_mut_overall.pdf')
+  pdf('./results/diff_mut/diff_mut_overall_CN.pdf')
   forestPlotFisher(fisherTable, SampleSheet, fdr=0.05)
   dev.off()
 }
 
-
 # Differential analysis RT ---------------------------------------------------
 
 for (rt in c(0, 1)){
-  geneMatrix_i <- geneMatrix[SampleSheet$patient_id[SampleSheet$radiotherapy == rt],]
-  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$radiotherapy == rt,])
-  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_RT_', rt, '.csv'), sep = ',', row.names = F)
+  geneMatrix_i <- geneMatrixCN[rownames(geneMatrixCN) %in% SampleSheet$patient_id[SampleSheet$radiotherapy == rt],]
+  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$radiotherapy == rt & SampleSheet$patient_id %in% rownames(geneMatrixCN),])
+  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_RT_', rt, '_CN.csv'), sep = ',', row.names = F)
   
   if (length(which(fisherTable$adjPval < 0.05))>0){
-    pdf( paste0('./results/diff_mut/diff_mut_RT_', rt, '.pdf'))
+    pdf( paste0('./results/diff_mut/diff_mut_RT_', rt, '_CN.pdf'))
     forestPlotFisher(fisherTable, SampleSheet = SampleSheet[SampleSheet$radiotherapy == rt,], fdr=0.05)
     dev.off()
   }
@@ -63,12 +63,12 @@ for (rt in c(0, 1)){
 # Differential analysis Her2 ---------------------------------------------------
 
 for (her2 in c(0, 1)){
-  geneMatrix_i <- geneMatrix[SampleSheet$patient_id[SampleSheet$her2 == her2],]
-  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$her2 == her2,])  
-  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_HER2_', her2, '.csv'), sep = ',', row.names = F)
+  geneMatrix_i <- geneMatrixCN[rownames(geneMatrixCN) %in% SampleSheet$patient_id[SampleSheet$her2 == her2],]
+  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$her2 == her2 & SampleSheet$patient_id %in% rownames(geneMatrixCN),])  
+  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_HER2_', her2, '_CN.csv'), sep = ',', row.names = F)
   
   if (length(which(fisherTable$adjPval < 0.05))>0){
-    pdf( paste0('./results/diff_mut/diff_mut_Her2_', her2, '.pdf'))
+    pdf( paste0('./results/diff_mut/diff_mut_Her2_', her2, '_CN.pdf'))
     forestPlotFisher(fisherTable, SampleSheet = SampleSheet[SampleSheet$her2 == her2,], fdr=0.05)
     dev.off()
   }
@@ -77,12 +77,12 @@ for (her2 in c(0, 1)){
 # Differential analysis ER ---------------------------------------------------
 
 for (er in c(0, 1)){
-  geneMatrix_i <- geneMatrix[SampleSheet$patient_id[SampleSheet$er == er],]
-  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$er == er,])
-  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_ER_', er, '.csv'), sep = ',', row.names = F)
+  geneMatrix_i <- geneMatrixCN[rownames(geneMatrixCN) %in% SampleSheet$patient_id[SampleSheet$er == er],]
+  fisherTable <- diffMut(geneMatrix_i, SampleSheet[SampleSheet$er == er & SampleSheet$patient_id %in% rownames(geneMatrixCN),])
+  write.table(fisherTable, paste0('./results/diff_mut/diff_mut_ER_', er, '_CN.csv'), sep = ',', row.names = F)
   
   if (length(which(fisherTable$adjPval < 0.05))>0){
-    pdf( paste0('./results/diff_mut/diff_mut_ER_', er, '.pdf'))
+    pdf( paste0('./results/diff_mut/diff_mut_ER_', er, '_CN.pdf'))
     forestPlotFisher(fisherTable, SampleSheet = SampleSheet[SampleSheet$er == er,], fdr=0.05)
     dev.off()
   }
