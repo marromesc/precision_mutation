@@ -33,7 +33,7 @@ ts <- read.csv(ts_datapath)
 
 # Set up copy number data + mutations --------------------------------------
 
-geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel)
+geneMatrix <- mutCountMatrix(eventDataFrame = eventDataFrame, patients = SampleSheet$patient_id, GenesPanel)
 geneMatrixCN <- t(addCN2Muts(gisticRegs=gisticRegs, geneMatrix=geneMatrix, SampleSheet_CN=SampleSheet_CN))
 events <- discover.matrix(geneMatrixCN)
 subset <- rowSums(geneMatrixCN) > 3 # remove mutations affecting less than 3 samples
