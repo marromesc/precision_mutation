@@ -15,6 +15,8 @@ source('./lib/somaticInteractions.R')
 source('./lib/mutCountMatrix.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
+maf_datapath <- './results/Filtered_Mutations_Compiled.maf'
+meta_maf_datapath <- './results/SampleSheet_maf.tsv'
 meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
@@ -34,7 +36,7 @@ ts <- read.csv(ts_datapath)
 
 # Set up mutation data ----------------------------------------------------
 
-geneMatrix <- t(mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T))
+geneMatrix <- t(mutCountMatrix(eventDataFrame = eventDataFrame, patients = SampleSheet$patient_id, GenesPanel))
 
 events <- discover.matrix(geneMatrix)
 subset <- rowSums(geneMatrix) > 3 # remove mutations affecting less than 3 samples
@@ -55,9 +57,8 @@ high_conf_drivers <- mut_genes[mut_genes$`Putative Driver Category` == 'High Con
 
 # select genes
 selected_genes <- unique(c(cancer_gene, high_conf_drivers))
-
 subset[which(!(names(subset) %in% selected_genes))] <- F
-
+geneMatrix <- geneMatrix[subset,]
 
 # Pairwise DISCOVER test --------------------------------------------------
 
@@ -65,62 +66,29 @@ subset[which(!(names(subset) %in% selected_genes))] <- F
 result.mutex <- pairwise.discover.test(events[subset,], alternative = 'less', fdr.method = 'DBH')
 print(result.mutex, fdr.threshold=0.05)
 result.mutex1 <- as.data.frame(result.mutex)
+result.mutex1$Event <- rep('Mutually_Exclusive', nrow(result.mutex1))
 
 #co-ocurrence
 result.mutex <- pairwise.discover.test(events[subset,], alternative = 'greater', fdr.method = 'DBH')
 print(result.mutex, fdr.threshold=0.05)
 result.mutex2 <- as.data.frame(result.mutex)
+result.mutex2$Event <- rep('Co_Occurence', nrow(result.mutex2))
+
+#merge
+fishertest <- rbind(result.mutex1, result.mutex2)
 
 #heatmap
-
-corMat <- cor(t(geneMatrix[subset,]), method = c("pearson", "kendall", "spearman")[1])*0
-for (i in 1:nrow(corMat)) {
-  for (j in 1:ncol(corMat)) {
-    Ind <- which((result.mutex1$gene1==rownames(corMat)[i] & result.mutex1$gene2==colnames(corMat)[j]) | (result.mutex1$gene2==rownames(corMat)[i] & result.mutex1$gene1==colnames(corMat)[j]))
-    if (length(Ind)==1) {
-      #corMat[i,j] <- -1 #mutual exclusivity
-      corMat[i,j] <- log10(result.mutex1[Ind,'q.value'])
-    }
-    
-    Ind <- which((result.mutex2$gene1==rownames(corMat)[i] & result.mutex2$gene2==colnames(corMat)[j]) | (result.mutex2$gene2==rownames(corMat)[i] & result.mutex2$gene1==colnames(corMat)[j]))
-    if (length(Ind)==1) {
-      #corMat[i,j] <- 1 #co-ocurrence
-      corMat[i,j] <- -log10(result.mutex2[Ind,'q.value'])
-    }
-  }
-}
-
-#removing no co-ocurrent and no mutually exclusive
-#corMat <- corMat[,colSums(corMat) != 0]
-#corMat <- corMat[rowSums(corMat) != 0,]
-
 pdf('./results/come/come_DISCOVER.pdf', width = 10, height = 10)
-Heatmap(corMat,       
-        col=colorRamp2(c(-3,0,3), c("darkolivegreen", 'white', "chocolate1")),
-        cluster_columns = F, 
-        cluster_rows = F,
-        #width = ncol(corMat)*unit(4, "mm"), 
-        #height = nrow(corMat)*unit(4, "mm"),
-        column_names_gp = grid::gpar(fontsize = 10),
-        row_names_gp = grid::gpar(fontsize = 10),
-        show_row_names = T,
-        show_column_names = T,
-        rect_gp = gpar(col = "grey", lwd = 1),
-        heatmap_legend_param = list(title = "", at = c(-3, 3), 
-                                    labels = c("Mutual exclusivity", "Co-ocurrence"), direction = "vertical")
-)
+plotSomaticInteraction(geneMatrix, fishertest)
 dev.off()
+write.table(fishertest, './results/come/come_DISCOVER.tsv', sep = '\t',quote = F, row.names = F)
 
 
 # Pairwise fisher test ----------------------------------------------------
 
-mutMat <- t(geneMatrix[subset,])
-
-pdf('./results/come/come_fisher.pdf')
-fishertest <- somaticInteractions(mutMat)
+fishertest <- somaticInteractions(t(geneMatrix))
+pdf('./results/come/come_fisher.pdf', width = 10, height = 10)
+plotSomaticInteraction(geneMatrix, as.data.frame(fishertest))
 dev.off()
-
-write.table(fishertest, './results/come/come_fisher_test.tsv', sep = '\t',quote = F, row.names = F)
-
-
+write.table(fishertest, './results/come/come_fisher.tsv', sep = '\t',quote = F, row.names = F)
 
