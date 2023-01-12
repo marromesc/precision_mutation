@@ -116,9 +116,6 @@ eventDataFrame_nki_panel <- eventDataFrame_all
 #rbind
 eventDataFrame <- rbind(eventDataFrame_kcl_panel, eventDataFrame_nki_panel, eventDataFrame_wes)
 
-# filter mutations in panel genes
-eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
-
 
 # Make maf file -----------------------------------------------------------
 
@@ -142,6 +139,8 @@ write.table(maf, './results/Filtered_Mutations_Compiled.maf', row.names = F, quo
 
 
 # Rename mutations and export ---------------------------------------------
+# filter mutations in panel genes
+eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
 
 # rename mutations
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c(".")] <- "splicing"
