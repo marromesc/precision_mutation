@@ -9,6 +9,7 @@ library(data.table)
 setwd('/mnt/albyn/maria/precision_mutation')
 
 source('./lib/oncoPlotDetails.R')
+source('./lib/mutCountMatrix.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
@@ -16,24 +17,11 @@ meta_datapath <- './results/SampleSheet.csv'
 eventDataFrame <- read.csv(mutation_datapath)
 SampleSheet <- read.csv(meta_datapath)
 
+GenesPanel <- readRDS('./data/GenesPanel.RDS')
+
 # Mutation frequency ------------------------------------------------------
 
-patients <- SampleSheet$patient_id
-GenesPanel <- readRDS('./data/GenesPanel.RDS')
-  
-geneMatrix <- matrix(0,nrow=length(patients),ncol=length(GenesPanel))
-rownames(geneMatrix) <- patients
-colnames(geneMatrix) <- GenesPanel
-
-for (i in 1:nrow(geneMatrix)) {
-  Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i])
-  for (j in 1:ncol(geneMatrix)) {
-    Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$gene.knowngene==colnames(geneMatrix)[j])
-    if (length(Ind)>=1) {
-      geneMatrix[i,j] <- 1
-    }
-  }
-}
+geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T)
 
 mut_count <- colSums(geneMatrix)
 mut_count <- mut_count[order(-mut_count)]
@@ -109,7 +97,7 @@ for (status in c('case', 'control')){
   )
   
   # oncoplot
-  pdf(paste0("./results/oncoPrint_all_", status,"_new.pdf"), height = 5)
+  pdf(paste0("./results/oncoPrint_all_", status,".pdf"), height = 5)
   print(oncoPrint(t(geneMatrix),
                   col=col,
                   alter_fun=alter_fun,
