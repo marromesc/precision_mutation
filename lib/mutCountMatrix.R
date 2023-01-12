@@ -1,4 +1,4 @@
-mutCountMatrix <- function(patients, GenesPanel){
+mutCountMatrix <- function(patients, GenesPanel, rm_non_aberrant_samples = F){
   geneMatrix <- matrix(0,nrow=length(patients),ncol=length(GenesPanel))
   rownames(geneMatrix) <- patients
   colnames(geneMatrix) <- GenesPanel
@@ -13,5 +13,10 @@ mutCountMatrix <- function(patients, GenesPanel){
     }
   }
   
+  geneMatrix[geneMatrix > 0 ] <- 1
+  
+  if (isTRUE(rm_non_aberrant_samples)){
+    geneMatrix <- geneMatrix[rowSums(geneMatrix) > 1,]
+  }
   return(geneMatrix)
 }

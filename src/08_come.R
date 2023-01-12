@@ -9,8 +9,8 @@ library(readr)
 library(ComplexHeatmap)
 library(circlize)
 
-
 source('./lib/somaticInteractions.R')
+source('./lib/mutCountMatrix.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
@@ -32,9 +32,7 @@ ts <- read.csv(ts_datapath)
 
 # Set up mutation data ----------------------------------------------------
 
-all_muts <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel & eventDataFrame$patient_id %in% SampleSheet$patient_id,] #removing contralaterals
-geneMatrix <- t(as.data.frame.matrix(table(all_muts$patient_id,all_muts$gene.knowngene))) #make mutation matrix
-geneMatrix[geneMatrix > 0 ] = 1
+geneMatrix <- t(mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T))
 
 events <- discover.matrix(geneMatrix)
 subset <- rowSums(geneMatrix) > 3 # remove mutations affecting less than 3 samples
@@ -120,7 +118,7 @@ pdf('./results/come_fisher.pdf')
 fishertest <- somaticInteractions(mutMat)
 dev.off()
 
-write.csv(fishertest, './results/come_fisher_test.csv', quote = F, row.names = F)
+write.table(fishertest, './results/come_fisher_test.tsv', sep = '\t',quote = F, row.names = F)
 
 
 
