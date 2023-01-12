@@ -1,4 +1,4 @@
-mutCountMatrix <- function(patients, GenesPanel, rm_non_aberrant_samples = F){
+mutCountMatrix <- function(eventDataFrame, patients, GenesPanel, rm_non_aberrant_samples = F){
   geneMatrix <- matrix(0,nrow=length(patients),ncol=length(GenesPanel))
   rownames(geneMatrix) <- patients
   colnames(geneMatrix) <- GenesPanel
