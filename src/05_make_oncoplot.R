@@ -19,6 +19,7 @@ SampleSheet <- read.csv(meta_datapath)
 
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
+
 # Mutation frequency ------------------------------------------------------
 
 geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T)
@@ -74,9 +75,6 @@ for (status in c('case', 'control')){
     }
   }
   
-  geneMatrix_bin <- ifelse(geneMatrix == "", 0, 1)
-  #SampleSheet[rownames(geneMatrix_bin), 'n_mut'] <- rowSums(geneMatrix_bin)
-  
   Grade <- ifelse(Grade == 3, 'High', ifelse(Grade == 2, 'Int', ifelse(Grade == 1, 'Low', 'Unknown')))
   ER <- ifelse(ER == 1, 'Positive', ifelse(ER == 0, 'Negative', 'Unknown'))
   RT <- ifelse(RT == 1, 'RT+', ifelse(RT == 0, 'RT-', 'Unknown'))
@@ -89,10 +87,8 @@ for (status in c('case', 'control')){
     Grade = c("High" = DarkerTurquoise, 'Int' = '#8fc9c9', "Low" =  "paleturquoise","Unknown" = "grey"),
     RT = c("RT+" = DarkerTurquoise,"RT-" = "paleturquoise","Unknown" = "grey"),
     Batch = c("NKI" = '#1565C0',"DUK" = "#6A1B9A","SLO" = "#B71C1C", 'Melbourne' = '#2E7032')),
-    #numbers=anno_text(patients,gp=gpar(fontsize=3)),
     annotation_height =1,
     annotation_width =1,
-    #annotation_name_gp = gpar(fontsize=8),
     gp = gpar(col = "black",lwd=0.05)
   )
   

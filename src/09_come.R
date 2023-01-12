@@ -15,8 +15,6 @@ source('./lib/somaticInteractions.R')
 source('./lib/mutCountMatrix.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
-maf_datapath <- './results/Filtered_Mutations_Compiled.maf'
-meta_maf_datapath <- './results/SampleSheet_maf.tsv'
 meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
