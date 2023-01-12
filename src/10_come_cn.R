@@ -8,6 +8,7 @@ library(discover)
 library(readr)
 library(ComplexHeatmap)
 library(circlize)
+library(tidyverse)
 
 source('./lib/somaticInteractions.R')
 source('./lib/addCN2Muts.R')
@@ -71,3 +72,21 @@ pdf('./results/come/come_fisher_cn.pdf', width = 10, height = 10)
 plotSomaticInteraction(geneMatrix=geneMatrixCN, as.data.frame(fishertest))
 dev.off()
 write.table(fishertest, './results/come/come_fisher_cn.tsv', sep = '\t',quote = F, row.names = F)
+
+number_mutual_exclusivities <- rowSums(table(fishertest$gene1[fishertest$q.value <= 0.05 & fishertest$Event=='Co_Occurence'], fishertest$gene2[fishertest$q.value <= 0.05 & fishertest$Event=='Co_Occurence']))
+number_mutual_exclusivities <- data.frame(Muts = names(number_mutual_exclusivities), number_mutual_exclusivities = as.numeric(number_mutual_exclusivities))
+number_mutual_exclusivities <- number_mutual_exclusivities[number_mutual_exclusivities$number_mutual_exclusivities > 1,]
+
+pdf('./results/come/number_cooccur_cn.pdf', height = 4)
+number_mutual_exclusivities %>% 
+  ggplot(aes(fct_reorder(Muts,
+                         number_mutual_exclusivities), 
+             number_mutual_exclusivities))+
+  geom_col() +
+  labs(x="", y="Number of Co_Occurrences") + 
+  coord_flip() + 
+  theme(panel.background = element_blank(), 
+        axis.line.x = element_line(colour = "grey50"),
+        axis.text = element_text(size = 20))
+dev.off()
+
