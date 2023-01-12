@@ -10,6 +10,11 @@ wes_meta_datapath <- './data/WES/DCIS_Precision_WES_All_Samples.txt'
 nki_panel_meta_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI_Samples.txt'
 slo_panel_meta_datapath <- './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_Panel_Sloane_Samples.txt'
 
+wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds'
+wes_mutect_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds'
+kcl_datapath <- './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect_Filtered.rds'
+nki_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.rds'
+
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
 
@@ -45,8 +50,8 @@ write.csv(SampleSheet, './results/SampleSheet.csv', row.names = F)
 # Load filtered mutations -------------------------------------------------
 
 #wes
-eventDataFrame_indel <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds')
-eventDataFrame_mutect <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds')
+eventDataFrame_indel <- readRDS(wes_indel_datapath)
+eventDataFrame_mutect <- readRDS(wes_mutect_datapath)
 
 eventDataFrame_mutect <- eventDataFrame_mutect[,c('exonicfunc.knowngene', 'chr', 'start', 'end', 'ref_allele', 'alt_allele',
                                                   'tumor_f', 'gene.knowngene', 'patient_id', 'first_subseq_event',
@@ -68,7 +73,7 @@ eventDataFrame_all$case_control <- ifelse(eventDataFrame_all$first_subseq_event 
 eventDataFrame_wes <- eventDataFrame_all
 
 #kcl panel
-eventDataFrame_mutect <- readRDS('./data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect_Filtered.rds')
+eventDataFrame_mutect <- readRDS(kcl_datapath)
 
 eventDataFrame_all <- eventDataFrame_mutect[,c('ExonicFunc.refGene', 'Chr', 'Start', 'End', 'Ref', 'Alt',
                                                'AF_PDCIS', 'Gene.refGene', 'patient_id', 'first_subseq_event',
@@ -87,7 +92,7 @@ eventDataFrame_all$case_control <- ifelse(eventDataFrame_all$first_subseq_event 
 eventDataFrame_kcl_panel <- eventDataFrame_all
 
 #nki panel
-eventDataFrame_mutect <- readRDS('./data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.rds')
+eventDataFrame_mutect <- readRDS(nki_datapath)
 
 eventDataFrame_all <- eventDataFrame_mutect[,c('Consequence', 'CHROM', 'POS', 'POS', 'REF', 'ALT',
                                                'vaf_DCIS_DNA', 'Gene.refGene', 'patient_id', 'first_subseq_event',
@@ -105,13 +110,44 @@ eventDataFrame_all$case_control <- ifelse(eventDataFrame_all$first_subseq_event 
 
 eventDataFrame_nki_panel <- eventDataFrame_all
 
+
+# Merge platforms ---------------------------------------------------------
+
 #rbind
 eventDataFrame <- rbind(eventDataFrame_kcl_panel, eventDataFrame_nki_panel, eventDataFrame_wes)
 
 # filter mutations in panel genes
 eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
 
+
+# Make maf file -----------------------------------------------------------
+
+SampleSheet_maf <- SampleSheet %>% mutate(Tumor_Sample_Barcode = patient_id, Grade = grade, days_to_last_followup = fup_months, Overall_Survival_Status = ifelse(case_control == 'case', 1, 0) )
+eventDataFrame$NCBI_Build <- 37
+eventDataFrame$Strand <- '+'
+eventDataFrame$Variant_Classification <- ifelse(exonicfunc.knowngene == '.', 'Splice_Site', 
+                                                ifelse(exonicfunc.knowngene %in% c('nonsynonymous SNV', 'missense_variant'), 'Missense_Mutation',
+                                                       ifelse(exonicfunc.knowngene == 'frameshift deletion', 'Frame_Shift_Del',
+                                                              ifelse(exonicfunc.knowngene %in% c('nonframeshift substitution', 'nonframeshift deletion'), 'In_Frame_Del',
+                                                                     ifelse(exonicfunc.knowngene %in% c('stopgain'), 'Nonsense_Mutation',
+                                                                            ifelse(exonicfunc.knowngene == 'frameshift insertion', 'Frame_Shift_Ins',
+                                                                                   ifelse(exonicfunc.knowngene == 'nonframeshift insertion', 'In_Frame_Ins', NA)))))))
+
+eventDataFrame$Variant_Type <- ifelse(eventDataFrame$Variant_Classification %in% c('Frame_Shift_Ins', 'In_Frame_Ins'), 'INS',
+                                      ifelse(eventDataFrame$Variant_Classification %in% c('Frame_Shift_Del', 'In_Frame_Del'), 'INS', 'SNP'))
+maf <- eventDataFrame %>% dplyr::select(Hugo_Symbol = gene.knowngene, Entrez_Gene_Id = patient_id, Center = batch, NCBI_Build, Chromosome = chr, Start_Position = start, End_Position = end, Variant_Classification, Variant_Type, Reference_Allele = ref_allele, Tumor_Seq_Allele1 = ref_allele, Tumor_Seq_Allele2 = alt_allele, Tumor_Sample_Barcode = patient_id)
+
+write.table(SampleSheet_maf, './results/SampleSheet_maf.tsv', row.names = F, quote = F, sep='\t')
+write.table(maf, './results/Filtered_Mutations_Compiled.maf', row.names = F, quote = F, sep='\t')
+
+
+# Rename mutations and export ---------------------------------------------
+
+# rename mutations
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c(".")] <- "splicing"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonsynonymous SNV")] <- "missense"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution")] <- "inframe_indel"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("frameshift deletion","frameshift insertion","frameshift substitution")] <- "frameshift" 
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
+
 write.csv(eventDataFrame, './results/Filtered_Mutations_Compiled.csv', row.names = F)
-
-
-
