@@ -15,6 +15,8 @@ source('./lib/GetCosmicNumber.R')
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 panel_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/Compiled_mutations_nki.xlsx'
 
+GenePanel <- readRDS('./data/GenesPanel.RDS')
+
 # read openclinica master sheet
 openclinica <- readMetadata(openclinica_datapath)
 openclinica$batch <- substr(openclinica$patient_id, start = 1, stop = 7)
@@ -75,7 +77,6 @@ write.table(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI.
 # Filter somatic mutations ------------------------------------------------
 
 # filter variants in gene panel
-GenePanel <- readRDS('./data/GenesPanel.RDS')
 df <- df[df$SYMBOL %in% GenePanel,]; dim(df)
 
 # filter low quality variants
@@ -112,13 +113,6 @@ df8 <- df7[!(df7$ClinVarSomatic == 0 & df7$ClinVarGermline != 0),]; dim(df8)
 
 # filter mutations with low af
 df9 <- df8[(as.numeric(df8$vaf_DCIS_DNA)/100) >= 0.05,]; dim(df9)
-
-# rename mutations
-df9$Consequence[df9$Consequence %in% c(".", 'splice_acceptor_variant', 'splice_donor_variant')] <- "splicing"
-df9$Consequence[df9$Consequence %in% c("nonsynonymous SNV", "missense_variant", 'missense_variant&splice_region_variant')] <- "missense"
-df9$Consequence[df9$Consequence %in% c("nonframeshift_deletion","nonframeshift_insertion","nonframeshift_substitution", 'inframe_insertion','inframe_deletion')] <- "inframe_indel"
-df9$Consequence[df9$Consequence %in% c("frameshift deletion","frameshift insertion","frameshift substitution", "frameshift_variant")] <- "frameshift"
-df9$Consequence[df9$Consequence %in% c("stopgain","stoploss","startgain","startloss", "stop_gained")] <- "nonsense"
 
 # export filtered mutations
 write.table(df9, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)

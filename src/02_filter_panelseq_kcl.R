@@ -15,6 +15,8 @@ openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_sampl
 panel_datapath <- './data/Panel/DCIS_Precision_Panel_KCL'
 mapping_datapath <- '/mnt/albyn/maria/master/Sloane-project-samples-MASTER-sheet-May-2022.xlsx'
 
+bed <- read.delim('./data/Panel/Sloane_Covered.bed', skip = 3, sep = "\t", header = FALSE, as.is = TRUE)
+
 # read openclinica master sheet
 openclinica <- readMetadata(openclinica_datapath)
 openclinica$batch <- substr(openclinica$patient_id, start = 1, stop = 7)
@@ -69,7 +71,6 @@ write.table(mafMat, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_P
 
 
 # filter variants in gene panel
-bed <- read.delim('./data/Panel/Sloane_Covered.bed', skip = 3, sep = "\t", header = FALSE, as.is = TRUE)
 GenePanel <- unique(bed[,4])
 mafMat <- mafMat[mafMat$Gene.refGene %in% GenePanel,]; dim(mafMat)
 
@@ -100,15 +101,6 @@ mafMat <- mafMat[!(mafMat$Ref=="G" & mafMat$Alt=="A" & GetCosmicNumber(mafMat$co
 
 # filter mutations with low af
 mafMat <- mafMat[as.numeric(mafMat$AF_PDCIS) >= 0.05,]; dim(mafMat)
-
-# rename mutations
-mafMat$ExonicFunc.refGene[mafMat$ExonicFunc.refGene %in% c(".")] <- "splicing"
-mafMat$ExonicFunc.refGene[mafMat$ExonicFunc.refGene %in% c("nonsynonymous SNV")] <- "missense"
-mafMat$ExonicFunc.refGene[mafMat$ExonicFunc.refGene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution")] <- "inframe_indel"
-mafMat$ExonicFunc.refGene[mafMat$ExonicFunc.refGene %in% c("frameshift deletion","frameshift insertion","frameshift substitution")] <- "frameshift" 
-mafMat$ExonicFunc.refGene[mafMat$ExonicFunc.refGene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
-
-ifelse(length(Ind) %in% length(unique(mafMat$patient_id)), 'Everything is okay', "There are samples with no mutations after filtering, as expected")
 
 # export filtered mutations
 saveRDS(mafMat, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect_Filtered.rds')

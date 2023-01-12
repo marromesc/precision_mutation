@@ -11,6 +11,7 @@ library(gridExtra)
 
 source('./lib/readMetadata.R')
 source('./lib/readMutect.R')
+source('./lib/MyNumeric.R')
 
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 qc_datapath <- './data/WES/20221102_DCIS_Precision_WES_sampleInfo_by_XiaogangWu.xlsx'
@@ -101,7 +102,7 @@ for (i in 1:nrow(openclinica)){
 
 # remove patients with no primary or normal
 openclinica <- openclinica[!(is.na(openclinica$sampleid_normal) | is.na(openclinica$sampleid_pdcis)),]; dim(openclinica)
-write.table(openclinica, './Tables/WES/DCIS_Precision_WES_All_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+write.table(openclinica, './data/WES/DCIS_Precision_WES_All_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter cases and controls
 openclinica <- openclinica[openclinica$first_subseq_event %in% c('ipsilateral DCIS', 'ipsilateral IBC', 'NA', 'death') & openclinica$surgery_final == 'BCS',]; dim(openclinica)
@@ -140,15 +141,6 @@ df_mrg <- df_mrg %>% mutate(key = paste0(chr, ":", start, ":", ref_allele, "-", 
 
 is.na(df_mrg$key) %>% table()
 
-df_mrg$exac_all <- as.numeric(df_mrg$exac_all)
-df_mrg$t_lod_fstar <- as.numeric(df_mrg$t_lod_fstar)
-df_mrg$esp6500siv2_all <- as.numeric(df_mrg$esp6500siv2_all)
-df_mrg$x1kg2015aug_max <- as.numeric(df_mrg$x1kg2015aug_max)
-df_mrg$t_depth <- as.numeric(df_mrg$t_depth)
-df_mrg$n_depth <- as.numeric(df_mrg$n_depth)
-df_mrg$normal_af <- as.numeric(df_mrg$normal_af)
-df_mrg$tumor_f <- as.numeric(df_mrg$tumor_f)
-
 # save merged mutations
 #write.table(df_mrg, './data/WES/DCIS_Precision_CaCo_Mutect.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
@@ -159,22 +151,16 @@ df_mrg2 <- df_mrg %>% dplyr::filter(func.knowngene %in% c('exonic', 'splicing', 
 #df_mrg3 <- df_mrg2 %>% dplyr::filter(exonicfunc.knowngene %in% c('.', "synonymous SNV","nonsynonymous SNV", "stoploss", "stopgain")); dim(df_mrg3); unique(df_mrg3$exonicfunc.knowngene)
 
 # remove mutations with less than 10 log odds score
-df_mrg4 <- df_mrg2 %>% dplyr::filter(t_lod_fstar >= 10); dim(df_mrg4) ; unique(df_mrg4$exonicfunc.knowngene)
+df_mrg4 <- df_mrg2 %>% dplyr::filter(MyNumeric(t_lod_fstar) >= 10); dim(df_mrg4) ; unique(df_mrg4$exonicfunc.knowngene)
 
-df_mrg5 <- df_mrg4 %>% dplyr::filter(tumor_f >= 0.02, # remove mutations with less than 2% vafs 
-                                     esp6500siv2_all < 0.01 | is.na(esp6500siv2_all),  # remove mutations in esp6500 database
-                                     exac_all < 0.01 | is.na(exac_all),  # remove mutations in exac database
-                                     x1kg2015aug_max < 0.01 | is.na(x1kg2015aug_max)); dim(df_mrg5); unique(df_mrg5$exonicfunc.knowngene) # remove mutations in 100G database
-df_mrg6 <- df_mrg5 %>% dplyr::filter(t_depth >= 15, n_depth >= 10, normal_af < 0.01); dim(df_mrg6); unique(df_mrg6$exonicfunc.knowngene) # remove mutations with low coverage
+df_mrg5 <- df_mrg4 %>% dplyr::filter(MyNumeric(tumor_f) >= 0.02, # remove mutations with less than 2% vafs 
+                                     MyNumeric(esp6500siv2_all) < 0.01,  # remove mutations in esp6500 database
+                                     MyNumeric(exac_all) < 0.01,  # remove mutations in exac database
+                                     MyNumeric(x1kg2015aug_max) < 0.01); dim(df_mrg5); unique(df_mrg5$exonicfunc.knowngene) # remove mutations in 100G database
+df_mrg6 <- df_mrg5 %>% dplyr::filter(MyNumeric(t_depth) >= 15, MyNumeric(n_depth) >= 10, MyNumeric(normal_af) < 0.01); dim(df_mrg6); unique(df_mrg6$exonicfunc.knowngene) # remove mutations with low coverage
 
 # filter non synonymous mutations
 df_mrg6 <- df_mrg6[!df_mrg6$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]; dim(df_mrg6); unique(df_mrg6$exonicfunc.knowngene)
-
-# rename mutations
-df_mrg6$exonicfunc.knowngene[df_mrg6$exonicfunc.knowngene %in% c(".")] <- "splicing"
-df_mrg6$exonicfunc.knowngene[df_mrg6$exonicfunc.knowngene %in% c("nonsynonymous SNV")] <- "missense"
-df_mrg6$exonicfunc.knowngene[df_mrg6$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
-unique(df_mrg6$exonicfunc.knowngene)
 
 # export filtered mutations
 saveRDS(df_mrg6, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds")
@@ -205,26 +191,16 @@ df_indels2 <- df_indels2 %>% mutate(key = paste0(chrom, ":", start, "-", end, ":
                                                                                                                        t_depth = t_ref_count + t_alt_count,
                                                                                                                        n_depth = n_ref_count + n_alt_count)
 
-df_indels2$exac_all <- as.numeric(df_indels2$exac_all)
-df_indels2$esp6500siv2_all <- as.numeric(df_indels2$esp6500siv2_all)
-df_indels2$x1kg2015aug_max <- as.numeric(df_indels2$x1kg2015aug_max)
-df_indels2$t_depth <- as.numeric(df_indels2$t_depth)
-df_indels2$n_depth <- as.numeric(df_indels2$n_depth)
-df_indels2$normal_af <- as.numeric(df_indels2$normal_af)
-df_indels2$tumor_f <- as.numeric(df_indels2$tumor_f)
-df_indels2$t_vaf <- as.numeric(df_indels2$t_vaf)
-df_indels2$n_vaf <- as.numeric(df_indels2$n_vaf)
-
 df_indels2$matching_key = paste0(df_indels2$tumor_name, "_", df_indels2$key, "_", df_indels2$hotkey)
 
 # filtering
-df_indels2 <- df_indels2 %>% dplyr::filter(t_vaf >= 0.02, #remove allele fraction in tumor samples < 0.02
-                                           esp6500siv2_all < 0.01 | is.na(esp6500siv2_all), # remove mutations in esp6500 database
-                                           exac_all < 0.01 | is.na(exac_all),  # remove mutations in exac databases
-                                           x1kg2015aug_max < 0.01 | is.na(x1kg2015aug_max)); dim(df_indels2) # remove mutations in 100G database
+df_indels2 <- df_indels2 %>% dplyr::filter(MyNumeric(t_vaf) >= 0.02, #remove allele fraction in tumor samples < 0.02
+                                           MyNumeric(esp6500siv2_all) < 0.01, # remove mutations in esp6500 database
+                                           MyNumeric(exac_all) < 0.01,  # remove mutations in exac databases
+                                           MyNumeric(x1kg2015aug_max) < 0.01); dim(df_indels2) # remove mutations in 100G database
 
 # remove mutations with low coverage
-df_indels2 <- df_indels2 %>% dplyr::filter(t_depth >= 15, n_depth >= 10, n_vaf <= 0.01); dim(df_indels2) 
+df_indels2 <- df_indels2 %>% dplyr::filter(MyNumeric(t_depth) >= 15, MyNumeric(n_depth) >= 10, MyNumeric(n_vaf) <= 0.01); dim(df_indels2) 
 
 # keep exonic mutations
 df_indels2 <- df_indels2 %>% dplyr::filter(func.knowngene %in% c("exonic")); dim(df_indels2) 
@@ -238,11 +214,6 @@ df_indels_notds1 = df_indels_notds %>% dplyr::filter(supportup >= 2, supportdown
 
 # filter non synonymous mutations
 df_indels_notds1 <- df_indels_notds1[!df_indels_notds1$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
-
-# rename mutations
-df_indels_notds1$exonicfunc.knowngene[df_indels_notds1$exonicfunc.knowngene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution")] <- "inframe_indel"
-df_indels_notds1$exonicfunc.knowngene[df_indels_notds1$exonicfunc.knowngene %in% c("frameshift deletion","frameshift insertion","frameshift substitution")] <- "frameshift"
-df_indels_notds1$exonicfunc.knowngene[df_indels_notds1$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
 
 # export filtered mutations
 saveRDS(df_indels_notds1, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
