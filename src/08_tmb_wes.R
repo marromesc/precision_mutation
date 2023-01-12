@@ -8,51 +8,18 @@ system('mkdir ./results/tmb')
 library(maftools)
 library(ggplot2)
 library(ggpubr)
+library(readr)
 
+maf_datapath <- './results/Filtered_Mutations_Compiled.maf'
+meta_datapath <- './results/SampleSheet.csv'
 
-# Load WES filtered mutations ---------------------------------------------
+SampleSheet <- read.csv(meta_datapath)
 
-eventDataFrame_mutect <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds')
-eventDataFrame_indel <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds')
+mafDF <- as.data.frame(read_tsv(maf_datapath))
+mafDF <- mafDF[mafDF$Center %in% c('NKI1', 'NKI2', 'NKI4', 'NKI3', 'SLO1', 'SLO2', 'SLO3', 'Duke1'),]
 
-eventDataFrame_mutect <- eventDataFrame_mutect[,c('gene.knowngene', 'chr', 'start', 'end', 'ref_allele', 'alt_allele',
-                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'patient_id', 'first_subseq_event')]
-
-eventDataFrame_indel <- eventDataFrame_indel[,c('gene.knowngene', 'chr', 'start', 'end', 'ref_allele', 'alt_allele',
-                                                  'exonicfunc.knowngene', 'exonicfunc.knowngene', 'patient_id', 'first_subseq_event')]
-
-eventDataFrame_all <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
-
-
-# Prepare maf file --------------------------------------------------------
-
-# change header
-colnames(eventDataFrame_all) <- c('Hugo_Symbol', 'Chromosome', 'Start_Position', 'End_Position', 'Reference_Allele', 'Tumor_Seq_Allele2', 'Variant_Classification', 'Variant_Type', 'Tumor_Sample_Barcode', 'first_subseq_event')
-
-# rename  mutations
-eventDataFrame_all <- eventDataFrame_all[!eventDataFrame_all$Variant_Classification %in% c("synonymous SNV"),]
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("frameshift deletion")] <- "Frame_Shift_Del"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("frameshift insertion")] <- "Frame_Shift_Ins"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("nonframeshift deletion")] <- "In_Frame_Del"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("nonframeshift insertion")] <- "In_Frame_Ins"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("nonsynonymous SNV")] <- "Missense_Mutation"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c("stoploss", "stopgain")] <- "Nonsense_Mutation"
-eventDataFrame_all$Variant_Classification[eventDataFrame_all$Variant_Classification %in% c(".")] <- "Spice_Site"
-
-eventDataFrame_all$Variant_Type[eventDataFrame_all$Variant_Classification %in% c("Missense_Mutation","Nonsense_Mutation","Spice_Site")] <- "SNP"
-eventDataFrame_all$Variant_Type[eventDataFrame_all$Variant_Classification %in% c("Frame_Shift_Ins","In_Frame_Ins")] <- "INS"
-eventDataFrame_all$Variant_Type[eventDataFrame_all$Variant_Classification %in% c("Frame_Shift_Del","In_Frame_Del")] <- "DEL"
-
-# define cases and controls
-eventDataFrame_all$first_subseq_event <- ifelse(eventDataFrame_all$first_subseq_event %in% c('ipsilateral IBC'), 'case',
-                                          ifelse(eventDataFrame_all$first_subseq_event %in% c('NA', 'death'), 'control', 'dcis_case'))
-
-eventDataFrame_case <- eventDataFrame_all[eventDataFrame_all$first_subseq_event == 'case',-ncol(eventDataFrame_all)]
-eventDataFrame_control <- eventDataFrame_all[eventDataFrame_all$first_subseq_event == 'control',-ncol(eventDataFrame_all)]
-
-# read data frame as maf
-maf_case <- read.maf(eventDataFrame_case)
-maf_control <- read.maf(eventDataFrame_control)
+maf_case <- read.maf(mafDF[mafDF$Entrez_Gene_Id %in% SampleSheet$patient_id[SampleSheet$case_control=='case'],])
+maf_control <- read.maf(mafDF[mafDF$Entrez_Gene_Id %in% SampleSheet$patient_id[SampleSheet$case_control=='control'],])
 
 
 # Compute TMB -------------------------------------------------------------
