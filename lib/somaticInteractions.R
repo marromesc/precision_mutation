@@ -1,11 +1,11 @@
 somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, showSigSymbols = TRUE,
-                    showCounts = FALSE, countStats = 'all', countType = 'all', returnAll = TRUE,
+                    returnAll = TRUE,geneOrder=NULL,
                     countsFontSize = 0.8, countsFontColor = "black", colPal = "BrBG", showSum = TRUE, 
-                    plotPadj = FALSE, colNC=9, nShiftSymbols = 5, sigSymbolsSize=2,sigSymbolsFontSize=0.9, 
+                    plotPadj = T, colNC=9, nShiftSymbols = 5, sigSymbolsSize=2,sigSymbolsFontSize=0.9, 
                     pvSymbols = c(46,42), limitColorBreaks = TRUE)
 {
   #pairwise fisher test source code borrowed from: https://www.nature.com/articles/ncomms6901
-  interactions = sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") NA else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
+  interactions <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") NA else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
   oddsRatio <- oddsGenes <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") f=NA else f$estimate} ))
   rownames(interactions) = colnames(interactions) = rownames(oddsRatio) = colnames(oddsRatio) = colnames(mutMat)
   
@@ -42,13 +42,15 @@ somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, 
   sigPairsTbl[,event_ratio := paste0(`11`, '/', event_ratio)]
   sigPairsTblSig = sigPairsTbl[order(as.numeric(pValue))][!duplicated(pair)]
   
-  sigPairsTblSig$pAdjLog = ifelse(sigPairsTblSig$oddsRatio > 1, yes = -log10(sigPairsTblSig$pAdj), no = log10(sigPairsTblSig$pAdj))
-  interactionsFDR = data.table::dcast(data = sigPairsTblSig, gene1 ~ gene2, value.var = 'pAdjLog')
-  data.table::setDF(interactionsFDR, rownames = interactionsFDR$gene1)
-  interactionsFDR$gene1 = NULL
-  interactions = interactionsFDR[rownames(interactions), colnames(interactions)]
-  interactions = as.matrix(interactions)
-  sigPairsTblSig$pAdjLog = NULL
+  if(plotPadj){
+    sigPairsTblSig$pAdjLog = ifelse(sigPairsTblSig$oddsRatio > 1, yes = -log10(sigPairsTblSig$pAdj), no = log10(sigPairsTblSig$pAdj))
+    interactionsFDR = data.table::dcast(data = sigPairsTblSig, gene1 ~ gene2, value.var = 'pAdjLog')
+    data.table::setDF(interactionsFDR, rownames = interactionsFDR$gene1)
+    interactionsFDR$gene1 = NULL
+    interactions = interactionsFDR[rownames(interactions), colnames(interactions)]
+    interactions = as.matrix(interactions)
+    sigPairsTblSig$pAdjLog = NULL
+  }
   
   sigPairsTblSig = sigPairsTblSig[!gene1 == gene2] #Remove diagonal elements
   
@@ -59,10 +61,16 @@ somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, 
     m <- nrow(interactions)
     n <- ncol(interactions)
     
-    
     col_pal = RColorBrewer::brewer.pal(9, colPal)
     col_pal = grDevices::colorRampPalette(colors = col_pal)
     col_pal = col_pal(m*n-1)
+    
+    if(!is.null(geneOrder)){
+      if(!all(rownames(interactions) %in% geneOrder)){
+        stop("Genes in geneOrder does not match the genes used for analysis.")
+      }
+      interactions = interactions[geneOrder, geneOrder]
+    }
     
     interactions[lower.tri(x = interactions, diag = TRUE)] = NA
     
@@ -91,52 +99,6 @@ somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, 
     mtext(side = 2, at = 1:m, text = rownames(interactions), cex = fontSize, font = 3)
     mtext(side = 3, at = 1:n, text = rownames(interactions), cex = fontSize, font = 3)
     #text(x = 1:m, y = rep(n+0.5, length(n)), labels = rownames(gene_sum), srt = 90, adj = 0, font = 3, cex = fontSize)
-    
-    if(showCounts){
-      countStats = match.arg(arg = countStats, choices = c("all", "sig"))
-      countType = match.arg(arg = countType, choices = c("all", "cooccur", "mutexcl"))
-      
-      if(countStats == 'sig'){
-        w = arrayInd(which(10^-abs(interactions) < max(pvalue)), rep(m,2))
-        for(i in 1:nrow(w)){
-          g1 = rownames(interactions)[w[i, 1]]
-          g2 = colnames(interactions)[w[i, 2]]
-          g12 = paste(sort(c(g1, g2)), collapse = ', ')
-          if(countType == 'all'){
-            e = sigPairsTblSig[pValue < max(pvalue)][pair %in% g12, event_ratio]
-          }else if(countType == 'cooccur'){
-            e = sigPairsTblSig[pValue < max(pvalue)][Event %in% "Co_Occurence"][pair %in% g12, `11`]
-          }else if(countType == 'mutexcl'){
-            e = sigPairsTblSig[pValue < max(pvalue)][Event %in% "Mutually_Exclusive"][pair %in% g12, `11`]
-          }
-          if(length(e) == 0){
-            e = 0
-          }
-          text(w[i,1], w[i,2], labels = e, font = 3, col = countsFontColor, cex = countsFontSize)
-        }
-      }else if(countStats == 'all'){
-        w = arrayInd(which(10^-abs(interactions) < max(pvalue)), rep(m,2))
-        w2 = arrayInd(which(10^-abs(interactions) >= max(pvalue)), rep(m,2))
-        w = rbind(w, w2)
-        #print(w)
-        for(i in 1:nrow(w)){
-          g1 = rownames(interactions)[w[i, 1]]
-          g2 = colnames(interactions)[w[i, 2]]
-          g12 = paste(sort(c(g1, g2)), collapse = ', ')
-          if(countType == 'all'){
-            e = sigPairsTblSig[pair %in% g12, event_ratio]
-          }else if(countType == 'cooccur'){
-            e = sigPairsTblSig[pair %in% g12, `11`]
-          }else if(countType == 'mutexcl'){
-            e = sigPairsTblSig[pair %in% g12, `01` + `10`]
-          }
-          if(length(e) == 0){
-            e = 0
-          }
-          text(w[i,1], w[i,2], labels = e, font = 3, col = countsFontColor, cex = countsFontSize)
-        }
-      }
-    }
     
     if(showSigSymbols){
       w = arrayInd(which(10^-abs(interactions) < min(pvalue)), rep(m,2))
