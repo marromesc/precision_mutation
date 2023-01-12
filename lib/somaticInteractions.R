@@ -1,9 +1,7 @@
-somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, showSigSymbols = TRUE,
-                    returnAll = TRUE,geneOrder=NULL,
-                    countsFontSize = 0.8, countsFontColor = "black", colPal = "BrBG", showSum = TRUE, 
-                    plotPadj = T, colNC=9, nShiftSymbols = 5, sigSymbolsSize=2,sigSymbolsFontSize=0.9, 
-                    pvSymbols = c(46,42), limitColorBreaks = TRUE)
-{
+somaticInteractions <- function(mutMat, pvalue=c(0.05, 0.01), fontSize=0.8, showSigSymbols=TRUE,
+                                returnAll=TRUE, geneOrder=NULL, countsFontSize=0.8, countsFontColor="black", 
+                                colPal="BrBG", showSum=TRUE, plotPadj=T, colNC=9, nShiftSymbols=5, 
+                                sigSymbolsSize=2, sigSymbolsFontSize=0.9, pvSymbols=c(46,42), limitColorBreaks=TRUE) {
   #pairwise fisher test source code borrowed from: https://www.nature.com/articles/ncomms6901
   interactions <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") NA else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
   oddsRatio <- oddsGenes <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") f=NA else f$estimate} ))
@@ -42,112 +40,12 @@ somaticInteractions <- function(mutMat, pvalue = c(0.05, 0.01), fontSize = 0.8, 
   sigPairsTbl[,event_ratio := paste0(`11`, '/', event_ratio)]
   sigPairsTblSig = sigPairsTbl[order(as.numeric(pValue))][!duplicated(pair)]
   
-  if(plotPadj){
-    sigPairsTblSig$pAdjLog = ifelse(sigPairsTblSig$oddsRatio > 1, yes = -log10(sigPairsTblSig$pAdj), no = log10(sigPairsTblSig$pAdj))
-    interactionsFDR = data.table::dcast(data = sigPairsTblSig, gene1 ~ gene2, value.var = 'pAdjLog')
-    data.table::setDF(interactionsFDR, rownames = interactionsFDR$gene1)
-    interactionsFDR$gene1 = NULL
-    interactions = interactionsFDR[rownames(interactions), colnames(interactions)]
-    interactions = as.matrix(interactions)
-    sigPairsTblSig$pAdjLog = NULL
-  }
-  
   sigPairsTblSig = sigPairsTblSig[!gene1 == gene2] #Remove diagonal elements
-  
-  #Source code borrowed from: https://www.nature.com/articles/ncomms6901
-  if(nrow(interactions) >= 5){
-    #interactions[10^-abs(interactions) > max(pvalue)] = 0
-    diag(interactions) <- 0
-    m <- nrow(interactions)
-    n <- ncol(interactions)
-    
-    col_pal = RColorBrewer::brewer.pal(9, colPal)
-    col_pal = grDevices::colorRampPalette(colors = col_pal)
-    col_pal = col_pal(m*n-1)
-    
-    if(!is.null(geneOrder)){
-      if(!all(rownames(interactions) %in% geneOrder)){
-        stop("Genes in geneOrder does not match the genes used for analysis.")
-      }
-      interactions = interactions[geneOrder, geneOrder]
-    }
-    
-    interactions[lower.tri(x = interactions, diag = TRUE)] = NA
-    
-    par(bty="n", mar = c(1, 4, 4, 2)+.1, las=2, fig = c(0, 1, 0, 1))
-    
-    # adjust breaks for colors according to predefined legend values
-    breaks = NA
-    if(limitColorBreaks){
-      minLog10pval = 3
-      breaks <- seq(-minLog10pval,minLog10pval,length.out=m*n+1)
-      #replace extreme values with the predefined minLog10pval values (and avoid white colored squares)
-      interactions4plot  = interactions
-      interactions4plot[interactions4plot < (-minLog10pval)] = -minLog10pval
-      interactions4plot[interactions4plot > minLog10pval] = minLog10pval
-      interactions = interactions4plot
-    }
-    
-    image(x=1:n, y=1:m, interactions, col = col_pal,
-          xaxt="n", yaxt="n",
-          xlab="",ylab="", xlim=c(0, n+1), ylim=c(0, n+1),
-          breaks = seq(-3, 3, length.out = (nrow(interactions) * ncol(interactions))))
-    
-    abline(h=0:n+.5, col="white", lwd=.5)
-    abline(v=0:n+.5, col="white", lwd=.5)
-    
-    mtext(side = 2, at = 1:m, text = rownames(interactions), cex = fontSize, font = 3)
-    mtext(side = 3, at = 1:n, text = rownames(interactions), cex = fontSize, font = 3)
-    #text(x = 1:m, y = rep(n+0.5, length(n)), labels = rownames(gene_sum), srt = 90, adj = 0, font = 3, cex = fontSize)
-    
-    if(showSigSymbols){
-      w = arrayInd(which(10^-abs(interactions) < min(pvalue)), rep(m,2))
-      points(w, pch=pvSymbols[2], col="black", cex = sigSymbolsSize)
-      #w = arrayInd(which(10^-abs(interactions) < max(pvalue)), rep(m,2))
-      w = arrayInd(which((10^-abs(interactions) < max(pvalue)) & (10^-abs(interactions) > min(pvalue))), rep(m,2))
-      points(w, pch=pvSymbols[1], col="black", cex = sigSymbolsSize)
-    }
-    
-    if(showSigSymbols){
-      points(x = n-nShiftSymbols, y = 0.7*n, pch = pvSymbols[2], cex = sigSymbolsSize) # "*"
-      if(plotPadj){
-        text(x = n-nShiftSymbols, y = 0.7*n, paste0(" fdr < ", min(pvalue)), pos=4, cex = sigSymbolsFontSize, adj = 0)
-      }else{
-        text(x = n-nShiftSymbols, y = 0.7*n, paste0(" P < ", min(pvalue)), pos=4, cex = sigSymbolsFontSize, adj = 0)
-      }
-      
-      points(x = n-nShiftSymbols, y = 0.65*n, pch = pvSymbols[1], cex = sigSymbolsSize) # "."
-      if(plotPadj){
-        text(x = n-nShiftSymbols, y = 0.65*n, paste0(" fdr < ", max(pvalue)), pos=4, cex = sigSymbolsFontSize)
-      }else{
-        text(x = n-nShiftSymbols, y = 0.65*n, paste0(" P < ", max(pvalue)), pos=4, cex = sigSymbolsFontSize)
-      }
-    }
-    
-    #image(y = 1:8 +6, x=rep(n,2)+c(2,2.5)+1, z=matrix(c(1:8), nrow=1), col=brewer.pal(8,"PiYG"), add=TRUE)
-    par(fig = c(0.4, 0.7, 0, 0.4), new = TRUE)
-    image(
-      x = c(0.8, 1),
-      y = seq(0, 1, length.out = 200),
-      z = matrix(seq(0,1,length.out = 200), nrow = 1),
-      col = col_pal, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = NA, ylab = NA
-    )
-    
-    #atLims = seq(nrow(interactions), 0.9*nrow(interactions), length.out = 7)
-    atLims = seq(0, 1, length.out = 7)
-    axis(side = 4, at = atLims,  tcl=-.15, labels =c("> 3 (Mutually exclusive)", 2, 1, 0, 1, 2, ">3 (Co-occurence)"), lwd=.5, cex.axis = sigSymbolsFontSize, line = 0.2)
-    if(plotPadj){
-      text(x = 0.4, y = 0.5, labels = "-log10(fdr)", srt = 90, cex = sigSymbolsFontSize, xpd = TRUE)
-    }else{
-      text(x = 0.4, y = 0.5, labels = "-log10(P-value)", srt = 90, cex = sigSymbolsFontSize, xpd = TRUE)
-    }
-    
-    #mtext(side=4, at = median(atLims), "-log10 (p-value)", las=3, cex = 0.9, line = 2.5, font = 1)
-  }
   
   if(!returnAll){
     sigPairsTblSig = sigPairsTblSig[pValue < min(pvalue)]
   }
+  
   return(sigPairsTblSig)
   
 }
