@@ -1,4 +1,4 @@
-addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN,
+addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp', 'gain'),
                        gene_annotation = readRDS("/home/argy/Documents/rubic_run/all_genes_grch38.rds")){
   gene_annotation$Chromosome <- gsub("X", "23", gene_annotation$Chromosome)
   
@@ -28,7 +28,7 @@ addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN,
       cn_i <- ifelse(cn_i == 'loss', 1, 0)
       geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
     } else if (gene %in% oncogene$OncogeneName){
-      cn_i <- ifelse(cn_i == 'amp', 1, 0)
+      cn_i <- ifelse(cn_i %in% onco_cn, 1, 0)
       geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
     }
   }
