@@ -1,4 +1,4 @@
-addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp', 'gain'),
+addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp', 'gain'), annotation=F,
                        gene_annotation = readRDS("/home/argy/Documents/rubic_run/all_genes_grch38.rds")){
   gene_annotation$Chromosome <- gsub("X", "23", gene_annotation$Chromosome)
   
@@ -25,16 +25,31 @@ addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp'
     cn_i <- SampleSheet_CN[,paste0(gene, '_cn')] 
     
     if(gene %in% ts$GeneSymbol){
-      cn_i <- ifelse(cn_i == 'loss', 1, 0)
-      geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
+      if (isTRUE(annotation)){
+        cn_i <- ifelse(cn_i %in% c('gain', 'amp'), 'neutral', cn_i)
+        geneMatrixCN[,gene] <- cn_i
+      } else {
+        cn_i <- ifelse(cn_i == 'loss', 1, 0)
+        geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
+      }
+
     } else if (gene %in% oncogene$OncogeneName){
-      cn_i <- ifelse(cn_i %in% onco_cn, 1, 0)
-      geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
+      if (isTRUE(annotation)){
+        cn_i <- ifelse(cn_i %in% c('loss'), 'neutral', cn_i)
+        geneMatrixCN[,gene] <- cn_i
+      } else {
+        cn_i <- ifelse(cn_i %in% onco_cn, 1, 0)
+        geneMatrixCN[,gene] <- geneMatrixCN[,gene] + cn_i
+      }
     }
   }
   
-  geneMatrixCN[geneMatrixCN > 0 ] <- 1
-  
+  if (isTRUE(annotation)){
+    geneMatrixCN <- ifelse(geneMatrixCN=='neutral', geneMatrix[SampleSheet_CN$site_accession,], geneMatrixCN)
+  } else {
+    geneMatrixCN[geneMatrixCN > 0 ] <- 1
+  }
+    
   return(geneMatrixCN)
 }
 
