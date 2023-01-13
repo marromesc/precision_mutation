@@ -1,7 +1,4 @@
-somaticInteractions <- function(mutMat, pvalue=c(0.05, 0.01), fontSize=0.8, showSigSymbols=TRUE,
-                                returnAll=TRUE, geneOrder=NULL, countsFontSize=0.8, countsFontColor="black", 
-                                colPal="BrBG", showSum=TRUE, plotPadj=T, colNC=9, nShiftSymbols=5, 
-                                sigSymbolsSize=2, sigSymbolsFontSize=0.9, pvSymbols=c(46,42), limitColorBreaks=TRUE) {
+somaticInteractions <- function(mutMat, returnAll=T) {
   #pairwise fisher test source code borrowed from: https://www.nature.com/articles/ncomms6901
   interactions <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") NA else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
   oddsRatio <- oddsGenes <- sapply(1:ncol(mutMat), function(i) sapply(1:ncol(mutMat), function(j) {f<- try(fisher.test(mutMat[,i], mutMat[,j]), silent=TRUE); if(class(f)=="try-error") f=NA else f$estimate} ))
@@ -90,3 +87,35 @@ plotSomaticInteraction <- function(geneMatrix, fishertest, remove_empty = F){
           heatmap_legend_param = list(title = "-log10(FDR P-value)", at = c(-3, 0, 3), 
                                       labels = c("-3 (Mutual exclusivity)", '0', "3 (Co-ocurrence)"), direction = "vertical"))
 }
+
+
+CaseControlCOME <- function(fishertest, geneMatrix, pheno){
+  events <- as.data.frame(fishertest[fishertest$q.value <= 0.05,])
+  events$p.value_caco <- NA
+  events$control_event <- NA
+  events$case_event <- NA
+  for(i in 1:nrow(events)){
+    event <- events$Event[i]
+    gene1 <- events$gene1[i]
+    gene2 <- events$gene2[i]
+    if (event == 'Co_Occurence'){
+      ct <- table(ifelse(colSums(geneMatrix[c(gene1,gene2),]) == 2, 'event', 'no_event'), pheno)
+      events$p.value_caco[i] <- fisher.test(ct)$p.value 
+      events$control_event[i] <- ct['event','control']
+      events$case_event[i] <- ct['event','case']
+    } else if (event == 'Mutually_Exclusive') {
+      ct <- table(ifelse(colSums(geneMatrix[c(gene1,gene2),]) == 1, 'event', 'no_event'), pheno)
+      events$p.value_caco[i] <- fisher.test(ct)$p.value 
+      events$control_event[i] <- ct['event','control']
+      events$case_event[i] <- ct['event','case']
+    }
+  }
+  events$q.value_caco <- p.adjust(events$p.value_caco, method = 'fdr')
+  events <- events[order(events$q.value_caco),]
+  return(events)
+}
+
+
+
+
+
