@@ -100,7 +100,14 @@ print(oncoPrint(geneMatrixCN[number_cooccur$Muts,], alter_fun = alter_fun))
 dev.off()
 
 #case control comes
-caco <- CaseControlCOME(fishertest, geneMatrix = geneMatrixCN, pheno = SampleSheet[colnames(geneMatrixCN),'case_control'])
+pheno <- SampleSheet[colnames(geneMatrixCN),'case_control']
+caco <- CaseControlCOME(fishertest, geneMatrix = geneMatrixCN, pheno = pheno)
 write.table(caco, './results/come/come_fisher_cn_caco.tsv', sep = '\t',quote = F, row.names = F)
 
+pdf(paste0("./results/come/oncoPrint_cooccur_caco.pdf"), height = 2)
+print(oncoPrint(geneMatrixCN[c('CCND1', 'ATM'),], alter_fun = alter_fun,
+                bottom_annotation = HeatmapAnnotation(df = data.frame(CaseControl=pheno),
+                                                                      col=list(CaseControl=c('case'='green', 'control'='pink'))
+                )))
+dev.off()
 
