@@ -145,9 +145,9 @@ eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
 
 # rename mutations
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c(".")] <- "splicing"
-eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonsynonymous SNV", 'missense_variant')] <- "missense"
-eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution")] <- "inframe_indel"
-eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("frameshift deletion","frameshift insertion","frameshift substitution")] <- "frameshift" 
-eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonsynonymous SNV", 'missense_variant', 'missense_variant&splice_region_variant')] <- "missense"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution", 'inframe_insertion','inframe_deletion')] <- "inframe_indel"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("frameshift deletion","frameshift insertion","frameshift substitution", 'frameshift_variant')] <- "frameshift" 
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss", 'stop_gained')] <- "nonsense"
 
 write.csv(eventDataFrame, './results/Filtered_Mutations_Compiled.csv', row.names = F)
