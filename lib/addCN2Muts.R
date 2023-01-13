@@ -1,5 +1,7 @@
 addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp', 'gain'), annotation=F,
-                       gene_annotation = readRDS("/home/argy/Documents/rubic_run/all_genes_grch38.rds")){
+                       gene_annotation = readRDS("/home/argy/Documents/rubic_run/all_genes_grch38.rds"),
+                       ts=read.csv('/home/maria/albyn/master/Human_TSGs.csv'),
+                       oncogene=read.csv('/home/maria/albyn/master/ongene_human.csv')){
   gene_annotation$Chromosome <- gsub("X", "23", gene_annotation$Chromosome)
   
   gisticRegs$gene <- "NA"
@@ -22,6 +24,7 @@ addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp'
   SampleSheet_CN <- SampleSheet_CN[SampleSheet_CN$site_accession %in% rownames(geneMatrix),]
   geneMatrixCN <- geneMatrix[SampleSheet_CN$site_accession,]
   for (gene in genes_cn){
+    message(gene)
     cn_i <- SampleSheet_CN[,paste0(gene, '_cn')] 
     
     if(gene %in% ts$GeneSymbol){
