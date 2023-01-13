@@ -1,6 +1,6 @@
 MyNumeric <- function(x) {
   x <- sapply(x,function(z){
-    if (z=="." | is.na(z)) {
+    if (z=="." | is.na(z) | z =='NA') {
       return(0)
     }
     else {

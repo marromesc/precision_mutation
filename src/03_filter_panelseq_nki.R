@@ -80,42 +80,42 @@ write.table(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI.
 df <- df[df$SYMBOL %in% GenePanel,]; dim(df)
 
 # filter low quality variants
-df2 <- df[(as.numeric(df$vaf_DCIS_DNA)/100) > 0.1 & as.numeric(df$cov_DCIS_DNA) > 100,]; dim(df2)
+df <- df[(as.numeric(df$vaf_DCIS_DNA)/100) > 0.1 & as.numeric(df$cov_DCIS_DNA) > 100,]; dim(df)
 
 # removing synonymous snps
-df3 <- df2[!df2$ExonicFunc.refGene %in% c("synonymous SNV"),]; dim(df3)
+df <- df[!df$ExonicFunc.refGene %in% c("synonymous SNV"),]; dim(df)
 
 # filtering exonic and splicing
-df3 <- df3[df3$Func.refGene %in% c('splicing', 'exonic', 'exonic;splicing', ''),]; dim(df3)
+df <- df[df$Func.refGene %in% c('splicing', 'exonic', 'exonic;splicing', ''),]; dim(df)
 
 # variants not found in gnomad were included
-df4 <- df3[MyNumeric(df3$gnomAD_exome_ALL)<0.01,]; dim(df4)
+df <- df[MyNumeric(df$gnomAD_exome_ALL)<0.01,]; dim(df)
 
 # variants not found gonl were included
-df4 <- df3[MyNumeric(df3$GONL_AF)<0.01,]; dim(df4)
+df <- df[MyNumeric(df$GONL_AF)<0.01,]; dim(df)
 
 # filter mutations in esp6500
-df4 <- df4[MyNumeric(df4$esp6500)<0.01,]; dim(df4)
+df <- df[MyNumeric(df$esp6500)<0.01,]; dim(df)
 
 # filter mutations in exac
-df5 <- df4[MyNumeric(df4$ExAC_ALL)<0.01,]; dim(df5)
+df <- df[MyNumeric(df$ExAC_ALL)<0.01,]; dim(df)
 
 # filter mutations in 100G
-df6 <- df5[MyNumeric(df5$ALL.sites.2015_08)<0.01,]; dim(df6)
+df <- df[MyNumeric(df$ALL.sites.2015_08)<0.01,]; dim(df)
 
 # filter mutations in cosmic
-df7 <- df6[!(df6$REF=="C" & df6$ALT=="T" & GetCosmicNumber(df6$cosmic70)<3 & (as.numeric(df6$vaf_DCIS_DNA)/100)<0.1),]
-df7 <- df6[!(df6$REF=="G" & df6$ALT=="A" & GetCosmicNumber(df6$cosmic70)<3 & (as.numeric(df6$vaf_DCIS_DNA)/100)<0.1),]
-dim(df7)
+df <- df[!(df$REF=="C" & df$ALT=="T" & GetCosmicNumber(df$cosmic70)<3 & (as.numeric(df$vaf_DCIS_DNA)/100)<0.1),]
+df <- df[!(df$REF=="G" & df$ALT=="A" & GetCosmicNumber(df$cosmic70)<3 & (as.numeric(df$vaf_DCIS_DNA)/100)<0.1),]
+dim(df)
 
 # variants found in somatic clinvar were included
-df8 <- df7[!(df7$ClinVarSomatic == 0 & df7$ClinVarGermline != 0),]; dim(df8)
+df <- df[!(df$ClinVarSomatic == 0 & df$ClinVarGermline != 0),]; dim(df)
 
 # filter mutations with low af
-df9 <- df8[(as.numeric(df8$vaf_DCIS_DNA)/100) >= 0.05,]; dim(df9)
+df <- df[(as.numeric(df$vaf_DCIS_DNA)/100) >= 0.05,]; dim(df)
 
 # export filtered mutations
-write.table(df9, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
-saveRDS(df9, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.rds')
+write.table(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+saveRDS(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.rds')
 
 
