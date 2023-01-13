@@ -22,7 +22,7 @@ GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
 # Mutation frequency ------------------------------------------------------
 
-geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T)
+geneMatrix <- mutCountMatrix(eventDataFrame = eventDataFrame, patients = SampleSheet$patient_id, GenesPanel, rm_non_aberrant_samples = T)
 
 mut_count <- colSums(geneMatrix)
 mut_count <- mut_count[order(-mut_count)]

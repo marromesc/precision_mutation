@@ -5,6 +5,7 @@
 setwd('/mnt/albyn/maria/precision_mutation')
 
 library(data.table)
+library(dplyr)
 
 wes_meta_datapath <- './data/WES/DCIS_Precision_WES_All_Samples.txt'
 nki_panel_meta_datapath <- './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI_Samples.txt'
@@ -122,13 +123,13 @@ eventDataFrame <- rbind(eventDataFrame_kcl_panel, eventDataFrame_nki_panel, even
 SampleSheet_maf <- SampleSheet %>% mutate(Tumor_Sample_Barcode = patient_id, Grade = grade, days_to_last_followup = fup_months, Overall_Survival_Status = ifelse(case_control == 'case', 1, 0) )
 eventDataFrame$NCBI_Build <- 37
 eventDataFrame$Strand <- '+'
-eventDataFrame$Variant_Classification <- ifelse(exonicfunc.knowngene == '.', 'Splice_Site', 
-                                                ifelse(exonicfunc.knowngene %in% c('nonsynonymous SNV', 'missense_variant'), 'Missense_Mutation',
-                                                       ifelse(exonicfunc.knowngene == 'frameshift deletion', 'Frame_Shift_Del',
-                                                              ifelse(exonicfunc.knowngene %in% c('nonframeshift substitution', 'nonframeshift deletion'), 'In_Frame_Del',
-                                                                     ifelse(exonicfunc.knowngene %in% c('stopgain'), 'Nonsense_Mutation',
-                                                                            ifelse(exonicfunc.knowngene == 'frameshift insertion', 'Frame_Shift_Ins',
-                                                                                   ifelse(exonicfunc.knowngene == 'nonframeshift insertion', 'In_Frame_Ins', NA)))))))
+eventDataFrame$Variant_Classification <- ifelse(eventDataFrame$exonicfunc.knowngene == '.', 'Splice_Site', 
+                                                ifelse(eventDataFrame$exonicfunc.knowngene %in% c('nonsynonymous SNV', 'missense_variant'), 'Missense_Mutation',
+                                                       ifelse(eventDataFrame$exonicfunc.knowngene == 'frameshift deletion', 'Frame_Shift_Del',
+                                                              ifelse(eventDataFrame$exonicfunc.knowngene %in% c('nonframeshift substitution', 'nonframeshift deletion'), 'In_Frame_Del',
+                                                                     ifelse(eventDataFrame$exonicfunc.knowngene %in% c('stopgain'), 'Nonsense_Mutation',
+                                                                            ifelse(eventDataFrame$exonicfunc.knowngene == 'frameshift insertion', 'Frame_Shift_Ins',
+                                                                                   ifelse(eventDataFrame$exonicfunc.knowngene == 'nonframeshift insertion', 'In_Frame_Ins', NA)))))))
 
 eventDataFrame$Variant_Type <- ifelse(eventDataFrame$Variant_Classification %in% c('Frame_Shift_Ins', 'In_Frame_Ins'), 'INS',
                                       ifelse(eventDataFrame$Variant_Classification %in% c('Frame_Shift_Del', 'In_Frame_Del'), 'INS', 'SNP'))
@@ -144,7 +145,7 @@ eventDataFrame <- eventDataFrame[eventDataFrame$gene.knowngene %in% GenesPanel,]
 
 # rename mutations
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c(".")] <- "splicing"
-eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonsynonymous SNV")] <- "missense"
+eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonsynonymous SNV", 'missense_variant')] <- "missense"
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("nonframeshift deletion","nonframeshift insertion","nonframeshift substitution")] <- "inframe_indel"
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("frameshift deletion","frameshift insertion","frameshift substitution")] <- "frameshift" 
 eventDataFrame$exonicfunc.knowngene[eventDataFrame$exonicfunc.knowngene %in% c("stopgain","stoploss","startgain","startloss")] <- "nonsense"
