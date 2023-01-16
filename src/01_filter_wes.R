@@ -155,18 +155,27 @@ df_mrg <- df_mrg %>% mutate(key = paste0(chr, ":", start, ":", ref_allele, "-", 
 is.na(df_mrg$key) %>% table()
 
 # keep snp mutations 
-df_mrg <- df_mrg %>% dplyr::filter(func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'))
+df_mrg <- df_mrg[df_mrg$func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'),]
 
 # remove mutations with less than 10 log odds score
-df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(t_lod_fstar) >= 10 & hotspot == 'FALSE')
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$t_lod_fstar) < 10 & df_mrg$hotspot == 'FALSE'),]
 
-df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(tumor_f) >= 0.02 & hotspot == 'FALSE', # remove mutations with less than 2% vafs 
-                                     MyNumeric(esp6500siv2_all) < 0.01 & hotspot == 'FALSE',  # remove mutations in esp6500 database
-                                     MyNumeric(exac_all) < 0.01 & hotspot == 'FALSE',  # remove mutations in exac database
-                                     MyNumeric(x1kg2015aug_max) < 0.01 & hotspot == 'FALSE') # remove mutations in 100G database
-df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(t_depth) >= 15 & hotspot == 'FALSE', 
-                                   MyNumeric(n_depth) >= 10 & hotspot == 'FALSE', 
-                                   MyNumeric(normal_af) < 0.01 & hotspot == 'FALSE') # remove mutations with low coverage
+# remove mutations with less than 2% vafs 
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$tumor_f) < 0.02 & df_mrg$hotspot == 'FALSE'),]
+
+# remove mutations in esp6500 database
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$esp6500siv2_all) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
+
+# remove mutations in exac database
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$exac_all) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
+
+# remove mutations in 100G database
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$x1kg2015aug_max) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
+
+# remove mutations with low coverage
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$t_depth) < 15 & df_mrg$hotspot == 'FALSE'),]
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$n_depth) < 10 & df_mrg$hotspot == 'FALSE'),]
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$normal_af) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
 
 # filter non synonymous mutations
 df_mrg <- df_mrg[!df_mrg$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
