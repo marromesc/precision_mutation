@@ -125,9 +125,22 @@ ifelse(length(unique(openclinica$sampleid_pdcis)) == length(unique(df_mrg$tumor_
 
 # add clinical data
 df_mrg <- merge(df_mrg, openclinica, by.x = 'tumor_name', by.y = 'sampleid_pdcis'); dim(df_mrg)
+df_mrg$location <- paste0('chr', df_mrg$chr, ':', df_mrg$start, '-', df_mrg$end)
 
 
 # Filter somatic mutations ------------------------------------------------
+
+# add if hotspot 
+dat_hotspots <- read.csv("./data/hotspots.csv") 
+df_mrg$hotspot <- 'FALSE'
+for (i in 1:nrow(dat_hotspots)){
+  message(i)
+  Ind <- which(df_mrg$gene.knowngene == dat_hotspots$gene[i] & df_mrg$aaannotation == dat_hotspots$AA_mut[i] & df_mrg$ref_allele == dat_hotspots$ref[i] & df_mrg$alt_allele == dat_hotspots$alt[i] & df_mrg$location == dat_hotspots$hg19[i])
+  
+  if(length(Ind) > 0){
+    df_mrg$hotspot[Ind] <- 'TRUE'
+  }
+}
 
 # annotate variants
 #df_mrg$variant_classification = recode_variant_classification(df_mrg$exonicfunc.knowngene)
@@ -141,30 +154,26 @@ df_mrg <- df_mrg %>% mutate(key = paste0(chr, ":", start, ":", ref_allele, "-", 
 
 is.na(df_mrg$key) %>% table()
 
-# save merged mutations
-#write.table(df_mrg, './data/WES/DCIS_Precision_CaCo_Mutect.txt', sep = '\t', quote = FALSE, row.names = FALSE)
-
 # keep snp mutations 
-df_mrg2 <- df_mrg %>% dplyr::filter(func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing')); dim(df_mrg2); unique(df_mrg2$exonicfunc.knowngene)
-
-# keep snp mutations 
-#df_mrg3 <- df_mrg2 %>% dplyr::filter(exonicfunc.knowngene %in% c('.', "synonymous SNV","nonsynonymous SNV", "stoploss", "stopgain")); dim(df_mrg3); unique(df_mrg3$exonicfunc.knowngene)
+df_mrg <- df_mrg %>% dplyr::filter(func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'))
 
 # remove mutations with less than 10 log odds score
-df_mrg4 <- df_mrg2 %>% dplyr::filter(MyNumeric(t_lod_fstar) >= 10); dim(df_mrg4) ; unique(df_mrg4$exonicfunc.knowngene)
+df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(t_lod_fstar) >= 10 & hotspot == 'FALSE')
 
-df_mrg5 <- df_mrg4 %>% dplyr::filter(MyNumeric(tumor_f) >= 0.02, # remove mutations with less than 2% vafs 
-                                     MyNumeric(esp6500siv2_all) < 0.01,  # remove mutations in esp6500 database
-                                     MyNumeric(exac_all) < 0.01,  # remove mutations in exac database
-                                     MyNumeric(x1kg2015aug_max) < 0.01); dim(df_mrg5); unique(df_mrg5$exonicfunc.knowngene) # remove mutations in 100G database
-df_mrg6 <- df_mrg5 %>% dplyr::filter(MyNumeric(t_depth) >= 15, MyNumeric(n_depth) >= 10, MyNumeric(normal_af) < 0.01); dim(df_mrg6); unique(df_mrg6$exonicfunc.knowngene) # remove mutations with low coverage
+df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(tumor_f) >= 0.02 & hotspot == 'FALSE', # remove mutations with less than 2% vafs 
+                                     MyNumeric(esp6500siv2_all) < 0.01 & hotspot == 'FALSE',  # remove mutations in esp6500 database
+                                     MyNumeric(exac_all) < 0.01 & hotspot == 'FALSE',  # remove mutations in exac database
+                                     MyNumeric(x1kg2015aug_max) < 0.01 & hotspot == 'FALSE') # remove mutations in 100G database
+df_mrg <- df_mrg %>% dplyr::filter(MyNumeric(t_depth) >= 15 & hotspot == 'FALSE', 
+                                   MyNumeric(n_depth) >= 10 & hotspot == 'FALSE', 
+                                   MyNumeric(normal_af) < 0.01 & hotspot == 'FALSE') # remove mutations with low coverage
 
 # filter non synonymous mutations
-df_mrg6 <- df_mrg6[!df_mrg6$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]; dim(df_mrg6); unique(df_mrg6$exonicfunc.knowngene)
+df_mrg <- df_mrg[!df_mrg$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
 
 # export filtered mutations
-saveRDS(df_mrg6, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds")
-write.table(df_mrg6, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+saveRDS(df_mrg, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds")
+write.table(df_mrg, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 
 # Load Pindel WES data -----------------------------------------------------
@@ -220,14 +229,5 @@ saveRDS(df_indels_notds1, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rd
 write.table(df_indels_notds1, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 
-# hotspots 
-# dat_hotspots = read_delim(file = "~/sea_rsrch3_home/rsrch2_backup/projects/DCIS_exome/data/hotspots.txt", delim = "\t")  %>% as_tibble();dim(dat_hotspots) # 1165    7
-# dat_hotspots_breast = dat_hotspots %>% clean_names() %>% 
-#   dplyr::filter(str_detect(tumor_type_composition, "breast"), type == "single residue") %>% 
-#   dplyr::mutate(hotkey = paste0(gene, "-", residue))
-# write.csv(dat_hotspots_breast, "dat_hotspots_breast.csv")
-# 
-# hotspots = unique(dat_hotspots_breast$hotkey);length(hotspots) #385
-# head(dat_hotspots_breast)
 
 
