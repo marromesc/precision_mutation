@@ -20,9 +20,6 @@ meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
 
-oncogene_datapath <- '/home/maria/albyn/master/ongene_human.csv'
-ts_datapath <- '/home/maria/albyn/master/Human_TSGs.csv'
-
 eventDataFrame <- read.csv(mutation_datapath)
 SampleSheet <- read.csv(meta_datapath)
 rownames(SampleSheet) <- SampleSheet$patient_id
@@ -92,11 +89,11 @@ dev.off()
 
 #oncoplot of cooccurrences
 geneMatrix <- mutCountMatrix(eventDataFrame = eventDataFrame, patients = SampleSheet$patient_id, GenesPanel, annotation=T)
-geneMatrixCN <- t(addCN2Muts(gisticRegs=gisticRegs, geneMatrix=geneMatrix, SampleSheet_CN=SampleSheet_CN, annotation=T))
-geneMatrixCN <- ifelse(geneMatrixCN=='0', NA, geneMatrixCN)
+geneMatrixCN_annot <- t(addCN2Muts(gisticRegs=gisticRegs, geneMatrix=geneMatrix, SampleSheet_CN=SampleSheet_CN, annotation=T))
+geneMatrixCN_annot <- ifelse(geneMatrixCN_annot=='0', NA, geneMatrixCN_annot)
 
 pdf(paste0("./results/come/oncoPrint_cooccur.pdf"), height = 5)
-print(oncoPrint(geneMatrixCN[number_cooccur$Muts,], alter_fun = alter_fun))
+print(oncoPrint(geneMatrixCN_annot[number_cooccur$Muts,], alter_fun = alter_fun))
 dev.off()
 
 #case control comes
@@ -105,7 +102,7 @@ caco <- CaseControlCOME(fishertest, geneMatrix = geneMatrixCN, pheno = pheno)
 write.table(caco, './results/come/come_fisher_cn_caco.tsv', sep = '\t',quote = F, row.names = F)
 
 pdf(paste0("./results/come/oncoPrint_cooccur_caco.pdf"), height = 2)
-print(oncoPrint(geneMatrixCN[c('CCND1', 'ATM'),], alter_fun = alter_fun,
+print(oncoPrint(geneMatrixCN_annot[c('CCND1', 'ATM'),], alter_fun = alter_fun,
                 bottom_annotation = HeatmapAnnotation(df = data.frame(CaseControl=pheno),
                                                                       col=list(CaseControl=c('case'='green', 'control'='pink'))
                 )))

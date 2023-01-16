@@ -27,13 +27,11 @@ gisticRegs <- read.csv(gistic_regs_datapath)
 SampleSheet_CN <- as.data.frame(read_tsv(meta_cn_datapath))
 
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
-oncogene <- read.csv(oncogene_datapath)
-ts <- read.csv(ts_datapath)
 
 
 # Set up copy number data + mutations --------------------------------------
 
-geneMatrix <- mutCountMatrix(patients = SampleSheet$patient_id, GenesPanel)
+geneMatrix <- mutCountMatrix(eventDataFrame = eventDataFrame, patients = SampleSheet$patient_id, GenesPanel)
 geneMatrixCN <- addCN2Muts(gisticRegs, geneMatrix, SampleSheet_CN)
 fisherTable <- diffMut(geneMatrixCN, SampleSheet[SampleSheet$patient_id %in% rownames(geneMatrixCN),])
 write.table(fisherTable, './results/diff_mut/diff_mut_overall_CN.csv', sep = ',', row.names = F)

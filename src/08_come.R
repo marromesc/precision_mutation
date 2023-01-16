@@ -19,9 +19,6 @@ meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
 
-oncogene_datapath <- '/home/maria/albyn/master/ongene_human.csv'
-ts_datapath <- '/home/maria/albyn/master/Human_TSGs.csv'
-
 eventDataFrame <- read.csv(mutation_datapath)
 SampleSheet <- read.csv(meta_datapath)
 gisticRegs <- read.csv(gistic_regs_datapath)
