@@ -8,6 +8,7 @@ library(tidyr)
 library(dplyr)
 library(stringr)
 library(gridExtra)
+library(biomaRt)
 
 source('./lib/readMetadata.R')
 source('./lib/readMutect.R')
@@ -225,9 +226,11 @@ if(!is.null(to_remove)){
   df <- df[-to_remove,]
 }
 
+df_mutect_discovery <- df_mutect
+
 # export filtered mutations
-saveRDS(df_mutect, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.rds")
-write.table(df_mutect, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+saveRDS(df_mutect_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.rds")
+write.table(df_mutect_discovery, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter mutations in cosmic
 df_mutect <- df_mutect[!(df_mutect$ref_allele=="C" & df_mutect$alt_allele=="T" & GetCosmicNumber(df_mutect$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_mutect)
@@ -330,8 +333,9 @@ df_pindel_notds <- df_pindel[!df_pindel$type %in% c("TD"),]; dim(df_pindel); dim
 df_pindel_notds1 <- df_pindel_notds[df_pindel_notds$supportup >= 2 & df_pindel_notds$supportdown >=2,]
 
 # export filtered mutations
-saveRDS(df_pindel_notds1, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
-write.table(df_pindel_notds1, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+df_pindel_notds1_discovery <- df_pindel_notds1 
+saveRDS(df_pindel_notds1_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
+write.table(df_pindel_notds1_discovery, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter mutations in cosmic
 df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="C" & df_pindel_notds1$alt_allele=="T" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
@@ -346,41 +350,84 @@ write.table(df_pindel_notds1, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtere
 
 library(dplyr); library(ggplot2); library(ggpubr)
 
-df <- df_mutect[df_mutect$first_subseq_event %in% 'ipsilateral IBC',]
+#mutect
+
+df <- df_mutect_discovery[df_mutect_discovery$first_subseq_event %in% 'ipsilateral IBC',]
 df <- as.data.frame(table(df$gene.knowngene))
 df <- df[df$Freq > 2,]
 
-pdf('./results_per_platform/WES/gene_mut_count_cases.pdf', width = 15)
+pdf('./results_per_platform/WES/gene_mut_count_cases_mutect.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
 dev.off()
 
-df <- df_mutect[df_mutect$first_subseq_event %in% c('death', 'NA'),]
+df <- df_mutect_discovery[df_mutect_discovery$first_subseq_event %in% c('death', 'NA'),]
 df <- as.data.frame(table(df$gene.knowngene))
 df <- df[df$Freq > 2,]
 
-pdf('./results_per_platform/WES/gene_mut_count_controls.pdf', width = 15)
+pdf('./results_per_platform/WES/gene_mut_count_controls_mutect.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
 dev.off()
 
-df <- df_mutect[df_mutect$first_subseq_event %in% 'ipsilateral IBC',]
+df <- df_mutect_discovery[df_mutect_discovery$first_subseq_event %in% 'ipsilateral IBC',]
 df <- as.data.frame(table(df$patient_id))
 df <- df[df$Freq > 2,]
 
-pdf('./results_per_platform/WES/patient_mut_count_cases.pdf', width = 15)
+pdf('./results_per_platform/WES/patient_mut_count_cases_mutect.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
 dev.off()
 
-df <- df_mutect[df_mutect$first_subseq_event %in% c('death', 'NA'),]
+df <- df_mutect_discovery[df_mutect_discovery$first_subseq_event %in% c('death', 'NA'),]
 df <- as.data.frame(table(df$patient_id))
 df <- df[df$Freq > 2,]
 
-pdf('./results_per_platform/WES/patient_mut_count_controls.pdf', width = 15)
+pdf('./results_per_platform/WES/patient_mut_count_controls_mutect.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+#pindel
+df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/gene_mut_count_cases_pindel.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/gene_mut_count_controls_pindel.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_cases_pindel.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_controls_pindel.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
