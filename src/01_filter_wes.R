@@ -12,10 +12,14 @@ library(gridExtra)
 source('./lib/readMetadata.R')
 source('./lib/readMutect.R')
 source('./lib/MyNumeric.R')
+source('./lib/GetCosmicNumber.R')
+source('./lib/filterByBed.R')
 
 openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
 qc_datapath <- './data/WES/20221102_DCIS_Precision_WES_sampleInfo_by_XiaogangWu.xlsx'
 wes_datapath <- '/mnt/albyn/maria/prj_precision/wes/vcf_annovar/'
+
+bed <- read.delim('./data/WES/Exome-Agilent_V4.bed', sep = "\t", header = FALSE, as.is = TRUE)
 
 # read openclinica master sheet
 openclinica <- readMetadata(openclinica_datapath)
@@ -154,14 +158,23 @@ df_mrg <- df_mrg %>% mutate(key = paste0(chr, ":", start, ":", ref_allele, "-", 
 
 is.na(df_mrg$key) %>% table()
 
-# keep snp mutations 
+# filter variants in gene panel
+df_mrg <- filterByBed(anned=df_mrg, bed=bed, chrom = 'chr', start = 'start', end = 'end')
+
+# remove mutations with low coverage
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$t_depth) < 15 & df_mrg$hotspot == 'FALSE'),]
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$n_depth) < 10 & df_mrg$hotspot == 'FALSE'),]
+df_mrg <- df_mrg[-which(MyNumeric(df_mrg$normal_af) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
+
+# removing synonymous snps
+df_mrg <- df_mrg[!df_mrg$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
+
+# filtering exonic and splicing
 df_mrg <- df_mrg[df_mrg$func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'),]
+df_mrg$func.knowngene <- ifelse(df_mrg$func.knowngene == 'exonic;splicing', 'exonic', df_mrg$func.knowngene)  # "splicing" in ANNOVAR is defined as variant that is within 2-bp away from an exon/intron boundary by default, but the threshold can be changed by the --splicing_threshold argument. Before Feb 2013, if "exonic,splicing" is shown, it means that this is a variant within exon but close to exon/intron boundary; this behavior is due to historical reason, when a user requested that exonic variants near splicing sites be annotated with splicing as well. However, I continue to get user emails complaining about this behavior despite my best efforts to put explanation in the ANNOVAR website with details. Therefore, starting from Feb 2013 , "splicing" only refers to the 2bp in the intron that is close to an exon, and if you want to have the same behavior as before, add -exonicsplicing argument.
 
 # remove mutations with less than 10 log odds score
 df_mrg <- df_mrg[-which(MyNumeric(df_mrg$t_lod_fstar) < 10 & df_mrg$hotspot == 'FALSE'),]
-
-# remove mutations with less than 2% vafs 
-df_mrg <- df_mrg[-which(MyNumeric(df_mrg$tumor_f) < 0.02 & df_mrg$hotspot == 'FALSE'),]
 
 # remove mutations in esp6500 database
 df_mrg <- df_mrg[-which(MyNumeric(df_mrg$esp6500siv2_all) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
@@ -172,13 +185,49 @@ df_mrg <- df_mrg[-which(MyNumeric(df_mrg$exac_all) >= 0.01 & df_mrg$hotspot == '
 # remove mutations in 100G database
 df_mrg <- df_mrg[-which(MyNumeric(df_mrg$x1kg2015aug_max) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
 
-# remove mutations with low coverage
-df_mrg <- df_mrg[-which(MyNumeric(df_mrg$t_depth) < 15 & df_mrg$hotspot == 'FALSE'),]
-df_mrg <- df_mrg[-which(MyNumeric(df_mrg$n_depth) < 10 & df_mrg$hotspot == 'FALSE'),]
-df_mrg <- df_mrg[-which(MyNumeric(df_mrg$normal_af) >= 0.01 & df_mrg$hotspot == 'FALSE'),]
+# remove mutations with less than 2% vafs 
+df_mrg <- df_mrg[-which(as.numeric(df_mrg$tumor_f) < 0.02 & df_mrg$hotspot == 'FALSE'),]; dim(df_mrg)
 
-# filter non synonymous mutations
-df_mrg <- df_mrg[!df_mrg$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
+# filter mutations in cosmic
+df_mrg <- df_mrg[!(df_mrg$ref_allele=="C" & df_mrg$alt_allele=="T" & GetCosmicNumber(df_mrg$cosmic70)<3 & as.numeric(df_mrg$tumor_f)<0.1 & df_mrg$hotspot == 'FALSE'),]; dim(df_mrg)
+df_mrg <- df_mrg[!(df_mrg$ref_allele=="G" & df_mrg$alt_allele=="A" & GetCosmicNumber(df_mrg$cosmic70)<3 & as.numeric(df_mrg$tumor_f)<0.1 & df_mrg$hotspot == 'FALSE'),]; dim(df_mrg)
+
+# keep splice variants if +5 of gene start and end
+grch37 = useEnsembl(biomart="genes",GRCh=37, dataset="hsapiens_gene_ensembl")
+gene_annotation <- getBM(attributes = c('hgnc_symbol', 'chromosome_name',
+                                        'start_position', 'end_position', 'band','external_synonym'),
+                         filters = 'hgnc_symbol', 
+                         values = unique(bed[,4]), 
+                         mart = grch37)
+gene_annotation_2 <- getBM(attributes = c('hgnc_symbol', 'chromosome_name',
+                                          'start_position', 'end_position', 'band','external_synonym'),
+                           filters = 'external_synonym', 
+                           values = unique(bed$V4), 
+                           mart = grch37)
+gene_annotation <- rbind(gene_annotation, gene_annotation_2)
+gene_annotation <- rbind(gene_annotation, data.frame(hgnc_symbol = 'MRTFA', chromosome_name = 'chr22', start_position=40806285, end_position=41032723, band=NA, external_synonym='MKL1'))
+gene_annotation$hgnc_symbol <- ifelse(gene_annotation$hgnc_symbol=='MLLT4', 'AFDN', gene_annotation$hgnc_symbol)
+gene_annotation <- gene_annotation[gene_annotation$chromosome_name %in% c(1:22, 'X'),]
+
+Ind <- which(df_mrg$func.knowngene == 'splicing')
+to_remove <- c()
+for(i in Ind){
+  gene <- strsplit(df_mrg$gene[i], ';')[[1]][1]
+  query <- gene_annotation[gene_annotation$hgnc_symbol==gene,]
+  if(nrow(query)==0){
+    query <- gene_annotation[gene_annotation$external_synonym==gene,]
+  } else if (nrow(query) > 1){
+    query <- query[1,]
+  }
+  if (!isTRUE(df_mrg$start[i] > query$start_position+5 & df_mrg$end[i] < query$end_position-5)){
+    to_remove <- c(to_remove,i)
+  }
+}
+
+if(!is.null(to_remove)){
+  df <- df[-to_remove,]
+}
+
 
 # export filtered mutations
 saveRDS(df_mrg, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds")
