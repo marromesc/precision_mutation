@@ -396,7 +396,7 @@ dev.off()
 #pindel
 df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% 'ipsilateral IBC',]
 df <- as.data.frame(table(df$gene.knowngene))
-df <- df[df$Freq > 5,]
+df <- df[df$Freq > 3,]
 
 pdf('./results_per_platform/WES/gene_mut_count_cases_pindel.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
@@ -406,7 +406,7 @@ dev.off()
 
 df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% c('death', 'NA'),]
 df <- as.data.frame(table(df$gene.knowngene))
-df <- df[df$Freq > 5,]
+df <- df[df$Freq > 3,]
 
 pdf('./results_per_platform/WES/gene_mut_count_controls_pindel.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
