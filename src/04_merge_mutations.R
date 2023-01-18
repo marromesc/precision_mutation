@@ -51,24 +51,24 @@ write.csv(SampleSheet, './results/SampleSheet.csv', row.names = F)
 # Load filtered mutations -------------------------------------------------
 
 #wes
-eventDataFrame_mutect <- readRDS(wes_mutect_datapath) %>% dplyr::mutate(Hugo_Symbol=gene.knowngene, Center=paste0(batch,'-WES'), NCBI_Build='hg19', Chromosome=chr, Start_Position=start, 
+eventDataFrame_mutect <- readRDS(wes_mutect_datapath) %>% dplyr::mutate(Hugo_Symbol=gene.knowngene, Entrez_Gene_Id=patient_id, Center=paste0(batch,'-WES'), NCBI_Build='hg19', Chromosome=chr, Start_Position=start, 
                                                                         End_Position=end, Strand='+', 
                                                                         Variant_Classification=ifelse(exonicfunc.knowngene=='nonsynonymous SNV', 'Missense_Mutation',
                                                                                                       ifelse(exonicfunc.knowngene%in%c('stopgain','stoploss'), 'Nonsense_Mutation',
                                                                                                              ifelse(exonicfunc.knowngene=='.', 'Splice_Site','NoData'))), 
-                                                                        Variant_Type='SNP', Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, dbSNP_RS=dbsnp_site,
+                                                                        Variant_Type='SNP', Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS=dbsnp_site,
                                                                         Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
                                                                         t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=tumor_f, n_vaf=normal_af,
                                                                         SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
-                                                                        COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Center, NCBI_Build, Chromosome, Start_Position, 
+                                                                        COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                            End_Position, Strand, Variant_Classification, Variant_Type, 
-                                                                                                           Reference_Allele, Tumor_Seq_Allele1, dbSNP_RS, Tumor_Sample_Barcode, 
+                                                                                                           Reference_Allele, Tumor_Seq_Allele1, Tumor_Seq_Allele2, dbSNP_RS, Tumor_Sample_Barcode, 
                                                                                                            Matched_Norm_Sample_Barcode, t_depth, t_ref_count, t_alt_count, n_depth, 
                                                                                                            n_ref_count, n_alt_count, t_vaf, n_vaf, SIFT, PolyPhen, GMAF, CLIN_SIG, 
-                                                                                                           ExAC_AF, COSMIC, ESP6500, patient_id, age_diagnosis, radiotherapy, time_at_risk,
+                                                                                                           ExAC_AF, COSMIC, ESP6500, age_diagnosis, radiotherapy, time_at_risk,
                                                                                                            first_subseq_event, case_control, er, pr, her2, grade, rna_id, cnv_id, wes_id)
 
-eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbol=gene.knowngene, Center=paste0(batch,'-WES'), NCBI_Build='hg19', Chromosome=chr, Start_Position=start, 
+eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbol=gene.knowngene, Entrez_Gene_Id=patient_id, Center=paste0(batch,'-WES'), NCBI_Build='hg19', Chromosome=chr, Start_Position=start, 
                                                                       End_Position=end, Strand='+', 
                                                                       Variant_Classification=ifelse(exonicfunc.knowngene=='frameshift deletion', 'Frame_Shift_Del',
                                                                                                     ifelse(exonicfunc.knowngene%in%c('stopgain','stoploss'), 'Nonsense_Mutation',
@@ -77,22 +77,22 @@ eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbo
                                                                                                                          ifelse(exonicfunc.knowngene=='nonframeshift insertion', 'In_Frame_Ins',
                                                                                                                                 ifelse(exonicfunc.knowngene=='frameshift insertion', 'Frame_Shift_Ins', 'NoData')))))), 
                                                                       Variant_Type=ifelse(ref_allele=='0' & alt_allele=='-', 'DEL',
-                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, dbSNP_RS='NoData',
+                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
                                                                       Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
                                                                       t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=tumor_f, n_vaf=normal_af,
                                                                       SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
-                                                                      COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Center, NCBI_Build, Chromosome, Start_Position, 
+                                                                      COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                          End_Position, Strand, Variant_Classification, Variant_Type, 
-                                                                                                         Reference_Allele, Tumor_Seq_Allele1, dbSNP_RS, Tumor_Sample_Barcode, 
+                                                                                                         Reference_Allele, Tumor_Seq_Allele1, Tumor_Seq_Allele2, dbSNP_RS, Tumor_Sample_Barcode, 
                                                                                                          Matched_Norm_Sample_Barcode, t_depth, t_ref_count, t_alt_count, n_depth, 
                                                                                                          n_ref_count, n_alt_count, t_vaf, n_vaf, SIFT, PolyPhen, GMAF, CLIN_SIG, 
-                                                                                                         ExAC_AF, COSMIC, ESP6500, patient_id, age_diagnosis, radiotherapy, time_at_risk,
+                                                                                                         ExAC_AF, COSMIC, ESP6500, age_diagnosis, radiotherapy, time_at_risk,
                                                                                                          first_subseq_event, case_control, er, pr, her2, grade, rna_id, cnv_id, wes_id)
 
 eventDataFrame_wes <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
 
 #kcl panel
-eventDataFrame_kcl_panel <- readRDS(kcl_datapath) %>% dplyr::mutate(Hugo_Symbol=Gene.refGene, Center='SLO-Panel', NCBI_Build='hg19', Chromosome=Chr, Start_Position=Start, 
+eventDataFrame_kcl_panel <- readRDS(kcl_datapath) %>% dplyr::mutate(Hugo_Symbol=Gene.refGene, Entrez_Gene_Id=patient_id, Center='SLO-Panel', NCBI_Build='hg19', Chromosome=Chr, Start_Position=Start, 
                                                                     End_Position=End, Strand='+', 
                                                                     Variant_Classification=ifelse(ExonicFunc.refGene=='nonsynonymous SNV', 'Missense_Mutation',
                                                                                                   ifelse(ExonicFunc.refGene%in%c('stopgain','stoploss'), 'Nonsense_Mutation',
@@ -103,20 +103,20 @@ eventDataFrame_kcl_panel <- readRDS(kcl_datapath) %>% dplyr::mutate(Hugo_Symbol=
                                                                                                                                      ifelse(ExonicFunc.refGene%in%c('nonframeshift insertion','nonframeshift substitution'), 'In_Frame_Ins', 'NoData'))))))), 
                                                                     Variant_Type=ifelse(nchar(Ref)==2 & nchar(Alt)==2, 'DNP',
                                                                                         ifelse(Alt=='-', 'DEL',
-                                                                                               ifelse(Ref=='-', 'INS', 'SNP'))), Reference_Allele=Ref, Tumor_Seq_Allele1=Alt, dbSNP_RS='NoData',
+                                                                                               ifelse(Ref=='-', 'INS', 'SNP'))), Reference_Allele=Ref, Tumor_Seq_Allele1=Alt, Tumor_Seq_Allele2=Alt, dbSNP_RS='NoData',
                                                                     Tumor_Sample_Barcode='NoData', Matched_Norm_Sample_Barcode='NoData', 
                                                                     t_depth='NoData', t_ref_count='NoData', t_alt_count='NoData', n_depth='NoData', n_ref_count='NoData', n_alt_count='NoData', t_vaf=AF_PDCIS, n_vaf=AF_NOR,
                                                                     SIFT=SIFT_pred, PolyPhen=Polyphen2_HVAR_pred, GMAF=ALL.sites.2015_08, CLIN_SIG=CLINSIG, ExAC_AF=ExAC_ALL,
-                                                                    COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Center, NCBI_Build, Chromosome, Start_Position, 
+                                                                    COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                        End_Position, Strand, Variant_Classification, Variant_Type, 
-                                                                                                       Reference_Allele, Tumor_Seq_Allele1, dbSNP_RS, Tumor_Sample_Barcode, 
+                                                                                                       Reference_Allele, Tumor_Seq_Allele1, Tumor_Seq_Allele2, dbSNP_RS, Tumor_Sample_Barcode, 
                                                                                                        Matched_Norm_Sample_Barcode, t_depth, t_ref_count, t_alt_count, n_depth, 
                                                                                                        n_ref_count, n_alt_count, t_vaf, n_vaf, SIFT, PolyPhen, GMAF, CLIN_SIG, 
-                                                                                                       ExAC_AF, COSMIC, ESP6500, patient_id, age_diagnosis, radiotherapy, time_at_risk,
+                                                                                                       ExAC_AF, COSMIC, ESP6500, age_diagnosis, radiotherapy, time_at_risk,
                                                                                                        first_subseq_event, case_control, er, pr, her2, grade, rna_id, cnv_id, wes_id)
 
 #nki panel
-eventDataFrame_nki_panel <- readRDS(nki_datapath) %>% dplyr::mutate(Hugo_Symbol=SYMBOL, Center='NKI-Panel', NCBI_Build='hg19', Chromosome=CHROM, Start_Position=POS, 
+eventDataFrame_nki_panel <- readRDS(nki_datapath) %>% dplyr::mutate(Hugo_Symbol=SYMBOL, Entrez_Gene_Id=patient_id, Center='NKI-Panel', NCBI_Build='hg19', Chromosome=CHROM, Start_Position=POS, 
                                                                     End_Position=POS, Strand='+', 
                                                                     Variant_Classification=ifelse(ExonicFunc.refGene=='nonsynonymous SNV', 'Missense_Mutation',
                                                                                                   ifelse(ExonicFunc.refGene%in%c('stopgain','stoploss'), 'Nonsense_Mutation',
@@ -127,23 +127,23 @@ eventDataFrame_nki_panel <- readRDS(nki_datapath) %>% dplyr::mutate(Hugo_Symbol=
                                                                                                                                      ifelse(ExonicFunc.refGene%in%c('nonframeshift insertion','nonframeshift substitution'), 'In_Frame_Ins', 'NoData'))))))), 
                                                                     Variant_Type=ifelse(nchar(REF)==2 & nchar(ALT)==2, 'DNP',
                                                                                         ifelse(ALT=='-', 'DEL',
-                                                                                               ifelse(REF=='-', 'INS', 'SNP'))), Reference_Allele=REF, Tumor_Seq_Allele1=ALT, dbSNP_RS='NoData',
+                                                                                               ifelse(REF=='-', 'INS', 'SNP'))), Reference_Allele=REF, Tumor_Seq_Allele1=ALT, Tumor_Seq_Allele2=ALT, dbSNP_RS='NoData',
                                                                     Tumor_Sample_Barcode='NoData', Matched_Norm_Sample_Barcode='NoData', 
                                                                     t_depth='NoData', t_ref_count='NoData', t_alt_count='NoData', n_depth='NoData', n_ref_count='NoData', n_alt_count='NoData', t_vaf=as.numeric(vaf_DCIS_DNA)/100, n_vaf='NoData',
                                                                     SIFT=SIFT_pred, PolyPhen=Polyphen2_HVAR_pred, GMAF=ALL.sites.2015_08, CLIN_SIG=CLIN_SIG, ExAC_AF=ExAC_ALL,
-                                                                    COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Center, NCBI_Build, Chromosome, Start_Position, 
+                                                                    COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                                                 End_Position, Strand, Variant_Classification, Variant_Type, 
-                                                                                                                                Reference_Allele, Tumor_Seq_Allele1, dbSNP_RS, Tumor_Sample_Barcode, 
+                                                                                                                                Reference_Allele, Tumor_Seq_Allele1, Tumor_Seq_Allele2, dbSNP_RS, Tumor_Sample_Barcode, 
                                                                                                                                 Matched_Norm_Sample_Barcode, t_depth, t_ref_count, t_alt_count, n_depth, 
                                                                                                                                 n_ref_count, n_alt_count, t_vaf, n_vaf, SIFT, PolyPhen, GMAF, CLIN_SIG, 
-                                                                                                                                ExAC_AF, COSMIC, ESP6500, patient_id, age_diagnosis, radiotherapy, time_at_risk,
+                                                                                                                                ExAC_AF, COSMIC, ESP6500, age_diagnosis, radiotherapy, time_at_risk,
                                                                                                                                 first_subseq_event, case_control, er, pr, her2, grade, rna_id, cnv_id, wes_id)
 
 
 # Merge platforms ---------------------------------------------------------
 
 eventDataFrame <- rbind(eventDataFrame_kcl_panel, eventDataFrame_nki_panel, eventDataFrame_wes)
-
+eventDataFrame <- eventDataFrame[eventDataFrame$Entrez_Gene_Id %in% SampleSheet$patient_id,]
 
 # Rename mutations and export ---------------------------------------------
 # filter mutations in panel genes

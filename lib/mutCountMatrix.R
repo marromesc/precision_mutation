@@ -6,7 +6,7 @@ mutCountMatrix <- function(eventDataFrame, patients, GenesPanel, rm_non_aberrant
   if(isTRUE(annotation)){
     for (i in 1:nrow(geneMatrix)) {
       for (j in 1:ncol(geneMatrix)) {
-        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
+        Ind <- which(eventDataFrame$Entrez_Gene_Id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
         if (length(Ind)==1) {
           geneMatrix[i,j] <- eventDataFrame$Consequence[Ind]
         } else if (length(Ind)>1){
@@ -17,7 +17,7 @@ mutCountMatrix <- function(eventDataFrame, patients, GenesPanel, rm_non_aberrant
   } else {
     for (i in 1:nrow(geneMatrix)) {
       for (j in 1:ncol(geneMatrix)) {
-        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
+        Ind <- which(eventDataFrame$Entrez_Gene_Id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
         if (length(Ind)>=1) {
           geneMatrix[i,j] <- 1
         }

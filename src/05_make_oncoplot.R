@@ -53,7 +53,7 @@ for (status in c('case', 'control')){
   ER <- rep("",length(patients));  Her2 <- rep("",length(patients));  Grade <- rep("",length(patients)); RT = rep('', length(patients)); Batch = rep('', length(patients))
   
   for (i in 1:nrow(geneMatrix)) {
-    Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i])
+    Ind <- which(eventDataFrame$Entrez_Gene_Id==rownames(geneMatrix)[i])
     pat_id <- rownames(geneMatrix)[i]
     ER[i] <- SampleSheet$er[which(SampleSheet$patient_id == pat_id)]
     Her2[i] <- SampleSheet$her2[which(SampleSheet$patient_id == pat_id)]
@@ -61,12 +61,12 @@ for (status in c('case', 'control')){
     RT[i] <- SampleSheet$radiotherapy[which(SampleSheet$patient_id == pat_id)]
     Batch[i] <-  SampleSheet$cohort[which(SampleSheet$patient_id == pat_id)]
     for (j in 1:ncol(geneMatrix)) {
-      Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
+      Ind <- which(eventDataFrame$Entrez_Gene_Id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
       if (length(Ind)==1) {
         geneMatrix[i,j] <- eventDataFrame$Consequence[Ind]
       }
       if (length(Ind)>1) {
-        if (length(unique(eventDataFrame$patient_id[Ind]))==1) {  
+        if (length(unique(eventDataFrame$Entrez_Gene_Id[Ind]))==1) {  
           geneMatrix[i,j] <- "multi_hit"
         }
         else {
