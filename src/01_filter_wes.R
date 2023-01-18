@@ -335,8 +335,8 @@ df_pindel_notds1 <- df_pindel_notds[df_pindel_notds$supportup >= 2 & df_pindel_n
 
 # export filtered mutations
 df_pindel_notds1_discovery <- df_pindel_notds1 
-saveRDS(df_pindel_notds1_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
-write.table(df_pindel_notds1_discovery, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+saveRDS(df_pindel_notds1_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.rds")
+write.table(df_pindel_notds1_discovery, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter mutations in cosmic
 df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="C" & df_pindel_notds1$alt_allele=="T" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_pindel_notds1$tumor_f)<0.1 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
@@ -396,7 +396,7 @@ dev.off()
 #pindel
 df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% 'ipsilateral IBC',]
 df <- as.data.frame(table(df$gene.knowngene))
-df <- df[df$Freq > 2,]
+df <- df[df$Freq > 5,]
 
 pdf('./results_per_platform/WES/gene_mut_count_cases_pindel.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
@@ -406,7 +406,7 @@ dev.off()
 
 df <- df_pindel_notds1_discovery[df_pindel_notds1_discovery$first_subseq_event %in% c('death', 'NA'),]
 df <- as.data.frame(table(df$gene.knowngene))
-df <- df[df$Freq > 2,]
+df <- df[df$Freq > 5,]
 
 pdf('./results_per_platform/WES/gene_mut_count_controls_pindel.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
