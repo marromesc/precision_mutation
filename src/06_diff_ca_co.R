@@ -15,14 +15,10 @@ source('./lib/addCN2Muts.R')
 
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
-gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
-meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
 
 eventDataFrame <- read.csv(mutation_datapath)
 eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 SampleSheet <- read.csv(meta_datapath)
-gisticRegs <- read.csv(gistic_regs_datapath)
-SampleSheet_CN <- as.data.frame(read_tsv(meta_cn_datapath))
 
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
