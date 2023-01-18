@@ -15,6 +15,7 @@ mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
 
 eventDataFrame <- read.csv(mutation_datapath)
+eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 SampleSheet <- read.csv(meta_datapath)
 
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
@@ -60,16 +61,16 @@ for (status in c('case', 'control')){
     RT[i] <- SampleSheet$radiotherapy[which(SampleSheet$patient_id == pat_id)]
     Batch[i] <-  SampleSheet$cohort[which(SampleSheet$patient_id == pat_id)]
     for (j in 1:ncol(geneMatrix)) {
-      Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$gene.knowngene==colnames(geneMatrix)[j])
+      Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
       if (length(Ind)==1) {
-        geneMatrix[i,j] <- eventDataFrame$exonicfunc.knowngene[Ind]
+        geneMatrix[i,j] <- eventDataFrame$Consequence[Ind]
       }
       if (length(Ind)>1) {
         if (length(unique(eventDataFrame$patient_id[Ind]))==1) {  
           geneMatrix[i,j] <- "multi_hit"
         }
         else {
-          geneMatrix[i,j] <- eventDataFrame$exonicfunc.knowngene[Ind[1]]
+          geneMatrix[i,j] <- eventDataFrame$Consequence[Ind[1]]
         }
       }
     }
@@ -111,7 +112,7 @@ for (status in c('case', 'control')){
                   bottom_annotation = ha,
                   alter_fun_is_vectorized = FALSE,
                   pct_gp = gpar(fontsize = 6),
-                  column_title = paste0(unique(eventDataFrame$case_control), ' (n=', length(patients), ')')
+                  column_title = paste0(status, ' (n=', length(patients), ')')
   ))
   dev.off()
 }

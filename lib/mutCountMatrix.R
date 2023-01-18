@@ -6,9 +6,9 @@ mutCountMatrix <- function(eventDataFrame, patients, GenesPanel, rm_non_aberrant
   if(isTRUE(annotation)){
     for (i in 1:nrow(geneMatrix)) {
       for (j in 1:ncol(geneMatrix)) {
-        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$gene.knowngene==colnames(geneMatrix)[j])
+        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
         if (length(Ind)==1) {
-          geneMatrix[i,j] <- eventDataFrame$exonicfunc.knowngene[Ind]
+          geneMatrix[i,j] <- eventDataFrame$Consequence[Ind]
         } else if (length(Ind)>1){
           geneMatrix[i,j] <- 'multi_hit'
         }
@@ -17,7 +17,7 @@ mutCountMatrix <- function(eventDataFrame, patients, GenesPanel, rm_non_aberrant
   } else {
     for (i in 1:nrow(geneMatrix)) {
       for (j in 1:ncol(geneMatrix)) {
-        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$gene.knowngene==colnames(geneMatrix)[j])
+        Ind <- which(eventDataFrame$patient_id==rownames(geneMatrix)[i] & eventDataFrame$Hugo_Symbol==colnames(geneMatrix)[j])
         if (length(Ind)>=1) {
           geneMatrix[i,j] <- 1
         }

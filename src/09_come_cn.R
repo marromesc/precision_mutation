@@ -21,6 +21,7 @@ gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
 
 eventDataFrame <- read.csv(mutation_datapath)
+eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 SampleSheet <- read.csv(meta_datapath)
 rownames(SampleSheet) <- SampleSheet$patient_id
 gisticRegs <- read.csv(gistic_regs_datapath)

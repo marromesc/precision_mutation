@@ -22,6 +22,7 @@ oncogene_datapath <- '/home/maria/albyn/master/ongene_human.csv'
 ts_datapath <- '/home/maria/albyn/master/Human_TSGs.csv'
 
 eventDataFrame <- read.csv(mutation_datapath)
+eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 SampleSheet <- read.csv(meta_datapath)
 gisticRegs <- read.csv(gistic_regs_datapath)
 SampleSheet_CN <- as.data.frame(read_tsv(meta_cn_datapath))
