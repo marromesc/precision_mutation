@@ -67,7 +67,7 @@ for(i in 1:nrow(df)){
 # Annotate mutations ------------------------------------------------------
 
 write.table(df[,c('CHROM', 'POS', 'POS', 'REF', 'ALT')], './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect.avinput', col.names = F, row.names = F, quote = F)
-system('perl /mnt/albyn/common/annovar/table_annovar.pl --buildver hg19 ./data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect.avinput -protocol refGene,exac03,cosmic70,avsnp147,dbnsfp30a,esp6500siv2_all,ALL.sites.2015_08,gnomad_exome -operation g,f,f,f,f,f,f,f -polish /mnt/albyn/common/annovar/humandb')
+system('perl /mnt/albyn/common/annovar/table_annovar.pl --buildver hg19 ./data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect.avinput -protocol refGene,exac03,cosmic70,esp6500siv2_all,ALL.sites.2015_08 -operation g,f,f,f,f -polish /mnt/albyn/common/annovar/humandb')
 
 df.new <- data.table::fread('./data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect.avinput.hg19_multianno.txt')
 df <- cbind(df, df.new); dim(df)
@@ -80,19 +80,20 @@ write.table(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_Panel_NKI.
 df <- df[df$SYMBOL %in% GenePanel,]; dim(df)
 
 # filter low quality variants
-df <- df[(as.numeric(df$vaf_DCIS_DNA)/100) > 0.1 & as.numeric(df$cov_DCIS_DNA) > 100,]; dim(df)
+df <- df[(MyNumeric(df$vaf_DCIS_DNA)/100) > 0.1 & as.numeric(df$cov_DCIS_DNA) > 100,]; dim(df)
 
 # removing synonymous snps
 df <- df[!df$ExonicFunc.refGene %in% c("synonymous SNV"),]; dim(df)
 
 # filtering exonic and splicing
 df <- df[df$Func.refGene %in% c('splicing', 'exonic', 'exonic;splicing', ''),]; dim(df)
+df$Func.refGene <- ifelse(df$Func.refGene == 'exonic;splicing', 'exonic', df$Func.refGene) # "splicing" in ANNOVAR is defined as variant that is within 2-bp away from an exon/intron boundary by default, but the threshold can be changed by the --splicing_threshold argument. Before Feb 2013, if "exonic,splicing" is shown, it means that this is a variant within exon but close to exon/intron boundary; this behavior is due to historical reason, when a user requested that exonic variants near splicing sites be annotated with splicing as well. However, I continue to get user emails complaining about this behavior despite my best efforts to put explanation in the ANNOVAR website with details. Therefore, starting from Feb 2013 , "splicing" only refers to the 2bp in the intron that is close to an exon, and if you want to have the same behavior as before, add -exonicsplicing argument.
 
-# variants not found in gnomad were included
-df <- df[MyNumeric(df$gnomAD_exome_ALL)<0.01,]; dim(df)
+# variants with more than 5 entries in gnomad were removed
+df <- df[MyNumeric(df$GNOMAD_AC)<5,]; dim(df)
 
-# variants not found gonl were included
-df <- df[MyNumeric(df$GONL_AF)<0.01,]; dim(df)
+# variants with more than 5 entries in gonl were removed
+df <- df[MyNumeric(df$GONL_AC)<5,]; dim(df)
 
 # filter mutations in esp6500
 df <- df[MyNumeric(df$esp6500)<0.01,]; dim(df)
@@ -110,9 +111,6 @@ dim(df)
 
 # variants found in somatic clinvar were included
 df <- df[!(df$ClinVarSomatic == 0 & df$ClinVarGermline != 0),]; dim(df)
-
-# filter mutations with low af
-df <- df[(as.numeric(df$vaf_DCIS_DNA)/100) >= 0.05,]; dim(df)
 
 # export filtered mutations
 write.table(df, './data/Panel/DCIS_Precision_Panel_NKI/DCIS_Precision_CaCo_Panel_NKI_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)

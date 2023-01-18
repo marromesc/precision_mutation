@@ -130,7 +130,7 @@ eventDataFrame_nki_panel <- readRDS(nki_datapath) %>% dplyr::mutate(Hugo_Symbol=
                                                                                                ifelse(REF=='-', 'INS', 'SNP'))), Reference_Allele=REF, Tumor_Seq_Allele1=ALT, Tumor_Seq_Allele2=ALT, dbSNP_RS='NoData',
                                                                     Tumor_Sample_Barcode='NoData', Matched_Norm_Sample_Barcode='NoData', 
                                                                     t_depth='NoData', t_ref_count='NoData', t_alt_count='NoData', n_depth='NoData', n_ref_count='NoData', n_alt_count='NoData', t_vaf=as.numeric(vaf_DCIS_DNA)/100, n_vaf='NoData',
-                                                                    SIFT=SIFT_pred, PolyPhen=Polyphen2_HVAR_pred, GMAF=ALL.sites.2015_08, CLIN_SIG=CLIN_SIG, ExAC_AF=ExAC_ALL,
+                                                                    SIFT='NoData', PolyPhen='NoData', GMAF=ALL.sites.2015_08, CLIN_SIG=CLIN_SIG, ExAC_AF=ExAC_ALL,
                                                                     COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                                                 End_Position, Strand, Variant_Classification, Variant_Type, 
                                                                                                                                 Reference_Allele, Tumor_Seq_Allele1, Tumor_Seq_Allele2, dbSNP_RS, Tumor_Sample_Barcode, 
