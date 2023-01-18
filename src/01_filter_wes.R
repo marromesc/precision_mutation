@@ -1,3 +1,4 @@
+
 # Maria Roman Escorza - 2022 11 30 
 
 # Load libraries and data path --------------------------------------------
@@ -338,8 +339,8 @@ saveRDS(df_pindel_notds1_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_F
 write.table(df_pindel_notds1_discovery, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 # filter mutations in cosmic
-df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="C" & df_pindel_notds1$alt_allele=="T" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
-df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="G" & df_pindel_notds1$alt_allele=="A" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
+df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="C" & df_pindel_notds1$alt_allele=="T" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_pindel_notds1$tumor_f)<0.1 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
+df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="G" & df_pindel_notds1$alt_allele=="A" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_pindel_notds1$tumor_f)<0.1 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
 
 # export filtered mutations
 saveRDS(df_pindel_notds1, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
@@ -432,4 +433,3 @@ ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
 dev.off()
-
