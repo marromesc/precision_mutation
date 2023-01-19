@@ -67,7 +67,7 @@ df <- merge(df, openclinica); dim(df)
 # Filter somatic mutations ------------------------------------------------
 
 df <- df %>% tidyr::separate(Otherinfo13, sep=':', into = c('GT_NOR', 'AD_NOR', 'AF_NOR', 'DP_NOR', 'F1R2_NOR', 'F2R2_NOR', 'MBQ_NOR', 'MFRL_NOR', 'MMQ_NOR', 'MPOS_NOR', 'ORIGINAL_CONTIG_MISMATCH_NOR', 'SA_MAP_AF_NOR', 'SA_POST_PROB_NOR'))
-df <- df %>% tidyr::separate(Otherinfo14, sep=':', into = c('GT_PDCIS', 'AD_PDCIS', 'AF_PDCIS', 'DP_PDCIS', 'F1R2_PDCIS', 'F2R2_PDCIS', 'MFRL_PDCIS', 'MMQ_PDCIS', 'MPOS_PDCIS', 'ORIGINAL_CONTIG_MISMATCH_PDCIS', 'SA_MAP_AF_PDCIS', 'SA_POST_PROB_PDCIS'))
+  df <- df %>% tidyr::separate(Otherinfo14, sep=':', into = c('GT_PDCIS', 'AD_PDCIS', 'AF_PDCIS', 'DP_PDCIS', 'F1R2_PDCIS', 'F2R2_PDCIS', 'MFRL_PDCIS', 'MMQ_PDCIS', 'MPOS_PDCIS', 'ORIGINAL_CONTIG_MISMATCH_PDCIS', 'SA_MAP_AF_PDCIS', 'SA_POST_PROB_PDCIS'))
 
 ifelse(length(Ind) %in% length(unique(df$patient_id)), 'Everything is okay', stop("There are samples which weren't read"))
 write.table(df, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect.txt', sep = '\t', quote = FALSE, row.names = FALSE)
