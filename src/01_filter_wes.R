@@ -233,6 +233,13 @@ df_mutect_discovery <- df_mutect
 saveRDS(df_mutect_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.rds")
 write.table(df_mutect_discovery, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
+# remove mutations with less than 5% vafs 
+df_mutect_discovery_5 <- df_mutect_discovery[-which(as.numeric(df_mutect_discovery$tumor_f) < 0.05 & df_mutect_discovery$hotspot == 'FALSE'),]; dim(df_mutect_discovery_5)
+
+# export filtered mutations
+saveRDS(df_mutect_discovery_5, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%.rds")
+write.table(df_mutect_discovery_5, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
 # filter mutations in cosmic
 df_mutect <- df_mutect[!(df_mutect$ref_allele=="C" & df_mutect$alt_allele=="T" & GetCosmicNumber(df_mutect$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_mutect)
 df_mutect <- df_mutect[!(df_mutect$ref_allele=="G" & df_mutect$alt_allele=="A" & GetCosmicNumber(df_mutect$cosmic70)<3 & as.numeric(df_mutect$tumor_f)<0.1 & df_mutect$hotspot == 'FALSE'),]; dim(df_mutect)
@@ -240,6 +247,13 @@ df_mutect <- df_mutect[!(df_mutect$ref_allele=="G" & df_mutect$alt_allele=="A" &
 # export filtered mutations
 saveRDS(df_mutect, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds")
 write.table(df_mutect, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
+# remove mutations with less than 5% vafs 
+df_mutect_5 <- df_mutect[-which(as.numeric(df_mutect$tumor_f) < 0.05 & df_mutect$hotspot == 'FALSE'),]; dim(df_mutect_5)
+
+# export filtered mutations
+saveRDS(df_mutect_5, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_5%.rds")
+write.table(df_mutect_5, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_5%.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 
 # Load Pindel WES data -----------------------------------------------------
@@ -253,11 +267,11 @@ df_melbourne <- readMutect(paste0(wes_datapath, "SLO3_mutect_pindel/SLO3/pindel"
 # merge data
 df_pindel <- rbind(df_duke, df_nki, df_sloane, df_melbourne); dim(df_pindel)
 df_pindel$tumor_name <- gsub('Futreal-Precision-clonalrela-','',gsub('AFutreal-PRECISION-Heterogeneity-','',gsub('ESawyer-PrecDCIS-DNA-','',gsub('Lips-PRECISION-NKIWES2-', '', gsub('Lips-PRECISION-NKIWES3-', '', gsub('Lips-PRECISION-NKIWES2-','',gsub('LEsther-PRECISION-NKIWES4-', '', gsub('DShelleyHwang-PRECISION-WES-' ,'' , df_pindel$sample_name))))))))
-ifelse(length(unique(openclinica$sampleid_pdcis)) == length(unique(df_pindel$tumor_name)), 'Everything is okay', stop("There are samples which weren't read"))
 
 # add clinical data
 df_pindel <- merge(df_pindel, openclinica, by.x = 'tumor_name', by.y = 'sampleid_pdcis'); dim(df_pindel)
 df_pindel$location <- paste0('chr', df_pindel$chr, ':', df_pindel$start, '-', df_pindel$end)
+
 
 # Filtering Pindel WES variants -----------------------------------------------------
 
@@ -304,6 +318,11 @@ df_pindel <- df_pindel[-which(MyNumeric(df_pindel$exac_all) >= 0.01 & df_pindel$
 # remove mutations in 100G database
 df_pindel <- df_pindel[-which(MyNumeric(df_pindel$x1kg2015aug_max) >= 0.01 & df_pindel$hotspot == 'FALSE'),]
 
+#vaf comparison
+png('./results_per_platform/WES/t_vafVStumor_f_Pindel.png')
+plot(df_pindel$t_vaf,df_pindel$tumor_f)
+dev.off()
+
 # remove mutations with less than 2% vafs 
 df_pindel <- df_pindel[-which(as.numeric(df_pindel$t_vaf) < 0.02 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
 
@@ -338,6 +357,13 @@ df_pindel_notds1_discovery <- df_pindel_notds1
 saveRDS(df_pindel_notds1_discovery, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.rds")
 write.table(df_pindel_notds1_discovery, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
+# remove mutations with less than 5% vafs 
+df_pindel_notds1_discovery_5 <- df_pindel_notds1_discovery[-which(as.numeric(df_pindel_notds1_discovery$t_vaf) < 0.05 & df_pindel_notds1_discovery$hotspot == 'FALSE'),]; dim(df_pindel_notds1_discovery_5)
+
+# export filtered mutations
+saveRDS(df_pindel_notds1_discovery_5, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery_5%.rds")
+write.table(df_pindel_notds1_discovery_5, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery_5%.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
 # filter mutations in cosmic
 df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="C" & df_pindel_notds1$alt_allele=="T" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_pindel_notds1$tumor_f)<0.1 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
 df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="G" & df_pindel_notds1$alt_allele=="A" & GetCosmicNumber(df_pindel_notds1$cosmic70)<3 & as.numeric(df_pindel_notds1$tumor_f)<0.1 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
@@ -345,6 +371,13 @@ df_pindel_notds1 <- df_pindel_notds1[!(df_pindel_notds1$ref_allele=="G" & df_pin
 # export filtered mutations
 saveRDS(df_pindel_notds1, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds")
 write.table(df_pindel_notds1, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
+# remove mutations with less than 5% vafs 
+df_pindel_notds1_5 <- df_pindel_notds1[-which(as.numeric(df_pindel_notds1$t_vaf) < 0.05 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1_5)
+
+# export filtered mutations
+saveRDS(df_pindel_notds1_5, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_5%.rds")
+write.table(df_pindel_notds1_5, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_5%.txt', sep = '\t', quote = FALSE, row.names = FALSE)
 
 
 # Mutation frequency ------------------------------------------------------------
@@ -429,6 +462,92 @@ df <- as.data.frame(table(df$patient_id))
 df <- df[df$Freq > 2,]
 
 pdf('./results_per_platform/WES/patient_mut_count_controls_pindel.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+
+# Mutation frequency 5%  ----------------------------------------------------------
+
+#mutect
+
+df <- df_mutect_discovery_5[df_mutect_discovery_5$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/gene_mut_count_cases_mutect_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_mutect_discovery_5[df_mutect_discovery_5$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/gene_mut_count_controls_mutect_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_mutect_discovery_5[df_mutect_discovery_5$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_cases_mutect_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_mutect_discovery_5[df_mutect_discovery_5$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_controls_mutect_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+#pindel
+df <- df_pindel_notds1_discovery_5[df_pindel_notds1_discovery_5$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 1,]
+
+pdf('./results_per_platform/WES/gene_mut_count_cases_pindel_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery_5[df_pindel_notds1_discovery_5$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$gene.knowngene))
+df <- df[df$Freq > 1,]
+
+pdf('./results_per_platform/WES/gene_mut_count_controls_pindel_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery_5[df_pindel_notds1_discovery_5$first_subseq_event %in% 'ipsilateral IBC',]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_cases_pindel_5.pdf', width = 15)
+ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+df <- df_pindel_notds1_discovery_5[df_pindel_notds1_discovery_5$first_subseq_event %in% c('death', 'NA'),]
+df <- as.data.frame(table(df$patient_id))
+df <- df[df$Freq > 2,]
+
+pdf('./results_per_platform/WES/patient_mut_count_controls_pindel_5.pdf', width = 15)
 ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
