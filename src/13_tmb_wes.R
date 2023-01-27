@@ -9,9 +9,10 @@ library(maftools)
 library(ggplot2)
 library(ggpubr)
 library(readr)
+library(data.table)
 
-wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered.rds'
-wes_mutect_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered.rds'
+wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.rds'
+wes_mutect_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.rds'
 wes_meta_datapath <- './results/SampleSheet.csv'
 
 
@@ -48,7 +49,7 @@ eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbo
                                                                       Variant_Type=ifelse(ref_allele=='0' & alt_allele=='-', 'DEL',
                                                                                           ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
                                                                       Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
-                                                                      t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=tumor_f, n_vaf=normal_af,
+                                                                      t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=t_vaf, n_vaf=normal_af,
                                                                       SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
                                                                       COSMIC=cosmic70, ESP6500=esp6500siv2_all) %>% dplyr::select(Hugo_Symbol, Entrez_Gene_Id, Center, NCBI_Build, Chromosome, Start_Position, 
                                                                                                                                   End_Position, Strand, Variant_Classification, Variant_Type, 
