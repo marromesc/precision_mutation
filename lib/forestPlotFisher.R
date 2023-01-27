@@ -2,7 +2,7 @@ forestPlotFisher <- function(fisherTable, SampleSheet, pVal = 0.05, fdr = NULL,
                              color=c('maroon','royalblue'),
                              geneFontSize = 0.8, titleSize = 1.2, lineWidth = 1,
                              m1Name = 'control', m2Name = 'case', m1.sampleSize = NULL, m2.sampleSize = NULL
-                             ){
+){
   
   if(is.null(fdr)){
     m.sigs = fisherTable[fisherTable$pval < pVal,]
@@ -39,7 +39,7 @@ forestPlotFisher <- function(fisherTable, SampleSheet, pVal = 0.05, fdr = NULL,
     stop('No differetially mutated genes found !')
   }
   
-  m.sigs$Hugo_Symbol = factor(x = m.sigs$Hugo_Symbol, levels = rev(m.sigs$Hugo_Symbol))
+  m.sigs$Aberration = factor(x = m.sigs$Aberration, levels = rev(m.sigs$Aberration))
   
   m.sigs$or_new = ifelse(test = m.sigs$or > 3, yes = 3, no = m.sigs$or)
   m.sigs$upper = ifelse(test = m.sigs$ci.up > 3, yes = 3, no = m.sigs$ci.up)
@@ -83,7 +83,7 @@ forestPlotFisher <- function(fisherTable, SampleSheet, pVal = 0.05, fdr = NULL,
   abline(v = 1, lty = 2, col = "gray", xpd = FALSE)
   axis(side = 1, at = 0:3, labels = c(0:3), font = 1, pos = 0.5, cex.axis = 1.3)
   
-  mtext(text = m.sigs$Hugo_Symbol, side = 4, line = 0.2, at = 1:nrow(m.sigs),
+  mtext(text = m.sigs$Aberration, side = 4, line = 0.2, at = 1:nrow(m.sigs),
         font = 3, las= 2, cex = geneFontSize, adj = 0)
   mtitle = paste(m2Name, ' (n = ', m2.sampleSize, ')', ' v/s ' , m1Name, ' (n = ' ,m1.sampleSize, ')', sep='')
   title(main = mtitle, font = 1, adj = 0, cex.main = titleSize)

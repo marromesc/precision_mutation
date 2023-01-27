@@ -17,8 +17,7 @@ diffMut <- function(geneMatrix, SampleSheet, m1Name = 'control', m2Name = 'case'
   m2.gs.comGenes = as.data.frame(ct2[names(ct2) %in% uniqueGenes])
   
   # merge groups
-  m.gs.meged = merge(m1.gs.comGenes, m2.gs.comGenes,
-                     by = 0, all = TRUE)
+  m.gs.meged = merge(m1.gs.comGenes, m2.gs.comGenes, by = 0, all = TRUE)
   
   #Set missing genes to zero
   m.gs.meged[is.na(m.gs.meged)] = 0
@@ -40,8 +39,7 @@ diffMut <- function(geneMatrix, SampleSheet, m1Name = 'control', m2Name = 'case'
     or = xf$estimate
     ci.up = xf$conf.int[2]
     ci.low = xf$conf.int[1]
-    tdat = data.table::data.table(Hugo_Symbol = gene, m1Mut , m2Mut,
-                                  pval = pval, or = or, ci.up = ci.up, ci.low = ci.low)
+    tdat = data.table::data.table(Aberration = gene, m1Mut , m2Mut, freq1 = m1Mut/m1.sampleSize, freq2 = m2Mut/m2.sampleSize ,pval = pval, or = or, ci.up = ci.up, ci.low = ci.low)
     tdat
   })
   
@@ -50,7 +48,7 @@ diffMut <- function(geneMatrix, SampleSheet, m1Name = 'control', m2Name = 'case'
   
   # fdr
   fisherTable[,adjPval := p.adjust(p = pval, method = 'fdr')]
-  colnames(fisherTable)[2:3] = c(m1Name, m2Name)
+  colnames(fisherTable)[2:5] = c(m1Name, m2Name, paste0('freq_', m1Name), paste0('freq_', m2Name))
   
   return(as.data.frame(fisherTable))
 }
