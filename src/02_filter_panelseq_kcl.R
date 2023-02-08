@@ -13,9 +13,8 @@ source('./lib/MyNumeric.R')
 source('./lib/GetCosmicNumber.R')
 source('./lib/filterByBed.R')
 
-openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
+openclinica_datapath <- './data/updated_Sloane_20221114_clinicaldata_caco_genomic_samples.xlsx'
 panel_datapath <- './data/Panel/DCIS_Precision_Panel_KCL'
-mapping_datapath <- '/mnt/albyn/maria/master/Sloane-project-samples-MASTER-sheet-May-2022.xlsx'
 
 bed <- read.delim('./data/Panel/Sloane_Covered.bed', skip = 3, sep = "\t", header = FALSE, as.is = TRUE)
 
@@ -25,23 +24,17 @@ openclinica$batch <- substr(openclinica$patient_id, start = 1, stop = 7)
 openclinica <- openclinica[openclinica$batch == 'PRE_SLO',]
 openclinica <- openclinica[openclinica$panel == 1,]; dim(openclinica)
 
-# map sloane and precision ids
-mapping_file <- readxl::read_xlsx(mapping_datapath, sheet = 2)
-mapping_file <- as.data.frame(mapping_file[!(mapping_file$Tissue %in% c('Normal', 'DCIS recurrence', 'Inv recurrence', 'Inv recurrence Tubular', 'Inv recurrence NST', 'Inv recurrence 2')) 
-                               & !is.na(mapping_file$'ng SureSelect'),]); dim(mapping_file)
-ifelse ( length(unique(mapping_file$'DNA-Short')[!(unique(mapping_file$'DNA-Short') %in% unique(openclinica$panel_id))]) == 0, 'Everything okay', stop('Missing samples in openclinica')) # check if any sequenced sample is missing in openclinica
-openclinica <- merge(openclinica, mapping_file[,c('Precision ID', 'Sloane ID')], by.x = 'patient_id', by.y = 'Precision ID'); dim(openclinica)
-rownames(openclinica) <- openclinica$'Sloane ID'
-
 
 # Load Sloane data --------------------------------------------------------
 
 # read kcl panel seq cases and controls 
 files <- list.files(panel_datapath, pattern = '*_bcf_processed.vcf.hg19_multianno.txt', full.names = T)
 samples <- gsub("\\_.*","",gsub(".*/","",files))
-ifelse ( length(samples[!(samples %in% unique(openclinica$'Sloane ID'))]) == 0, 'Everything okay', stop('Missing samples in openclinica')) # check if any sequenced sample is missing in openclinica
+ifelse ( length(samples[!(samples %in% unique(openclinica$panel_id_sloane))]) == 0, 'Everything okay', stop('Missing samples in openclinica')) # check if any sequenced sample is missing in openclinica
 
-openclinica$`Sloane ID`[!(openclinica$`Sloane ID` %in% samples)] # remaining samples aren't normal paired, then they were excluded of the analysis
+openclinica <- openclinica[openclinica$panel!='no_normal',]  # remaining samples aren't normal paired, then they were excluded of the analysis
+
+rownames(openclinica) <- openclinica$panel_id_sloane
 
 openclinica <- openclinica[samples,]; dim(openclinica)
 write.table(openclinica, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_Panel_Sloane_Samples.txt', sep = '\t', quote = FALSE, row.names = FALSE)
@@ -67,7 +60,7 @@ df <- merge(df, openclinica); dim(df)
 # Filter somatic mutations ------------------------------------------------
 
 df <- df %>% tidyr::separate(Otherinfo13, sep=':', into = c('GT_NOR', 'AD_NOR', 'AF_NOR', 'DP_NOR', 'F1R2_NOR', 'F2R2_NOR', 'MBQ_NOR', 'MFRL_NOR', 'MMQ_NOR', 'MPOS_NOR', 'ORIGINAL_CONTIG_MISMATCH_NOR', 'SA_MAP_AF_NOR', 'SA_POST_PROB_NOR'))
-  df <- df %>% tidyr::separate(Otherinfo14, sep=':', into = c('GT_PDCIS', 'AD_PDCIS', 'AF_PDCIS', 'DP_PDCIS', 'F1R2_PDCIS', 'F2R2_PDCIS', 'MFRL_PDCIS', 'MMQ_PDCIS', 'MPOS_PDCIS', 'ORIGINAL_CONTIG_MISMATCH_PDCIS', 'SA_MAP_AF_PDCIS', 'SA_POST_PROB_PDCIS'))
+df <- df %>% tidyr::separate(Otherinfo14, sep=':', into = c('GT_PDCIS', 'AD_PDCIS', 'AF_PDCIS', 'DP_PDCIS', 'F1R2_PDCIS', 'F2R2_PDCIS', 'MFRL_PDCIS', 'MMQ_PDCIS', 'MPOS_PDCIS', 'ORIGINAL_CONTIG_MISMATCH_PDCIS', 'SA_MAP_AF_PDCIS', 'SA_POST_PROB_PDCIS'))
 
 ifelse(length(Ind) %in% length(unique(df$patient_id)), 'Everything is okay', stop("There are samples which weren't read"))
 write.table(df, './data/Panel/DCIS_Precision_Panel_KCL/DCIS_Precision_CaCo_Panel_Sloane_Mutect.txt', sep = '\t', quote = FALSE, row.names = FALSE)
