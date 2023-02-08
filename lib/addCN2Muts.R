@@ -1,7 +1,7 @@
 addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp', 'gain'), annotation=F,
                        gene_annotation = readRDS("/home/argy/Documents/rubic_run/all_genes_grch38.rds"),
-                       ts=read.csv('/home/maria/albyn/master/Human_TSGs.csv'),
-                       oncogene=read.csv('/home/maria/albyn/master/ongene_human.csv')){
+                       ts=read.csv('/mnt/albyn/common/master/Human_TSGs.csv'),
+                       oncogene=read.csv('/mnt/albyn/common/master/ongene_human.csv')){
   gene_annotation$Chromosome <- gsub("X", "23", gene_annotation$Chromosome)
   
   gisticRegs$gene <- "NA"
@@ -21,8 +21,8 @@ addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp'
   
   genes_cn <- unique(genes_cn)
   
-  SampleSheet_CN <- SampleSheet_CN[SampleSheet_CN$site_accession %in% rownames(geneMatrix),]
-  geneMatrixCN <- geneMatrix[SampleSheet_CN$site_accession,]
+  SampleSheet_CN <- SampleSheet_CN[SampleSheet_CN$patient_id %in% rownames(geneMatrix),]
+  geneMatrixCN <- geneMatrix[SampleSheet_CN$patient_id,]
   for (gene in genes_cn){
     message(gene)
     cn_i <- SampleSheet_CN[,paste0(gene, '_cn')] 
@@ -48,7 +48,7 @@ addCN2Muts <- function(gisticRegs, geneMatrix, SampleSheet_CN, onco_cn = c('amp'
   }
   
   if (isTRUE(annotation)){
-    geneMatrixCN <- ifelse(geneMatrixCN=='neutral', geneMatrix[SampleSheet_CN$site_accession,], geneMatrixCN)
+    geneMatrixCN <- ifelse(geneMatrixCN=='neutral', geneMatrix[SampleSheet_CN$patient_id,], geneMatrixCN)
   } else {
     geneMatrixCN[geneMatrixCN > 0 ] <- 1
   }
