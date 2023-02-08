@@ -15,6 +15,9 @@ wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discov
 wes_mutect_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%.rds'
 wes_meta_datapath <- './results/SampleSheet.csv'
 
+census_datapath <- '/mnt/albyn/common/master/cancer_gene_census.csv'
+dnds_datapath <- '/mnt/albyn/maria/precision_mutation/results/dmdscv/sel_cv_mutectandpindel.csv'
+
 
 # Load data ---------------------------------------------------------------
 
@@ -47,7 +50,7 @@ eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbo
                                                                                                                          ifelse(exonicfunc.knowngene=='nonframeshift insertion', 'In_Frame_Ins',
                                                                                                                                 ifelse(exonicfunc.knowngene=='frameshift insertion', 'Frame_Shift_Ins', 'NoData')))))), 
                                                                       Variant_Type=ifelse(ref_allele=='0' & alt_allele=='-', 'DEL',
-                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
+                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=refs, Tumor_Seq_Allele1=sams, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
                                                                       Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
                                                                       t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=tumor_f, n_vaf=normal_af,
                                                                       SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
@@ -63,6 +66,12 @@ eventDataFrame <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
 
 eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 eventDataFrame <- eventDataFrame[eventDataFrame$Entrez_Gene_Id %in% SampleSheet$patient_id,]
+
+census <- read_csv(census_datapath)[[1]]
+dnds <- read_csv(dnds_datapath)
+dnds <- dnds[dnds$qglobal_cv<=0.05,][[1]]
+
+eventDataFrame <- eventDataFrame[eventDataFrame$Hugo_Symbol%in%c(census,dnds),]
 
 eventDataFrame$Consequence[eventDataFrame$Variant_Classification %in% c("Splice_Site")] <- "splicing"
 eventDataFrame$Consequence[eventDataFrame$Variant_Classification %in% c('Missense_Mutation')] <- "missense"

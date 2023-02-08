@@ -7,6 +7,7 @@ setwd('/mnt/albyn/maria/precision_mutation')
 library(collapse)
 library(ComplexHeatmap)
 library(data.table)
+library(dplyr)
 
 source('./lib/oncoPlotDetails.R')
 source('./lib/mutCountMatrix.R')
@@ -14,6 +15,9 @@ source('./lib/mutCountMatrix.R')
 wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery.rds'
 wes_mutect_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery.rds'
 wes_meta_datapath <- './results/SampleSheet.csv'
+
+census_datapath <- '/mnt/albyn/common/master/cancer_gene_census.csv'
+dnds_datapath <- '/mnt/albyn/maria/precision_mutation/results/dmdscv/sel_cv_mutectandpindel.csv'
 
 
 # Load data ---------------------------------------------------------------
@@ -63,6 +67,12 @@ eventDataFrame <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
 
 eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 eventDataFrame <- eventDataFrame[eventDataFrame$Entrez_Gene_Id %in% SampleSheet$patient_id,]
+
+census <- read_csv(census_datapath)[[1]]
+dnds <- read_csv(dnds_datapath)
+dnds <- dnds[dnds$qglobal_cv<=0.05,][[1]]
+
+eventDataFrame <- eventDataFrame[eventDataFrame$Hugo_Symbol%in%c(census,dnds),]
 
 eventDataFrame$Consequence[eventDataFrame$Variant_Classification %in% c("Splice_Site")] <- "splicing"
 eventDataFrame$Consequence[eventDataFrame$Variant_Classification %in% c('Missense_Mutation')] <- "missense"

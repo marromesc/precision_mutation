@@ -13,7 +13,7 @@ source('./lib/diffMut.R')
 source('./lib/mutCountMatrix.R')
 source('./lib/addCN2Muts.R')
 
-mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
+mutation_datapath <- './results/Filtered_Mutations_Compiled_5%.csv'
 meta_datapath <- './results/SampleSheet.csv'
 
 eventDataFrame <- read.csv(mutation_datapath)

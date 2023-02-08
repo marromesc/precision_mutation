@@ -76,6 +76,8 @@ for (status in c('case', 'control')){
     }
   }
   
+  write.csv(geneMatrix, paste0("./results/geneMatrix_", status,".csv"))
+  
   Grade <- ifelse(Grade == 3, 'High', ifelse(Grade == 2, 'Int', ifelse(Grade == 1, 'Low', 'Unknown')))
   ER <- ifelse(ER == 1, 'Positive', ifelse(ER == 0, 'Negative', 'Unknown'))
   RT <- ifelse(RT == 1, 'RT+', ifelse(RT == 0, 'RT-', 'Unknown'))
