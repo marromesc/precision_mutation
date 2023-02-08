@@ -1,5 +1,9 @@
-col = c(amp='coral4', gain='darkorange3', loss='darkslategray4', missense = "violet", multi_hit = "black", nonsense = "red", UTR_variant = "yellow", splice_site = "green", inframe_indel = "orange",frameshift="blue",splicing="yellow")
+col = c(loh='darkslategray4', amp='coral4', gain='darkorange3', loss='darkslategray4', missense = "violet", multi_hit = "black", nonsense = "red", UTR_variant = "yellow", splice_site = "green", inframe_indel = "orange",frameshift="blue",splicing="yellow")
 alter_fun <- list(
+  loh=function(x, y, w, h)
+  {
+    grid.rect(x, y, w*0.9, h*0.9, gp=gpar(fill=col["loh"], col=NA))
+  },
   loss=function(x, y, w, h)
   {
     grid.rect(x, y, w*0.9, h*0.9, gp=gpar(fill=col["loss"], col=NA))
