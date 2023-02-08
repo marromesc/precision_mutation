@@ -18,14 +18,19 @@ source('./lib/oncoPlotDetails.R')
 mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
 meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
-meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
+meta_cn_datapath <- '/home/maria/albyn/copynumber/precision_copynumber/results/preprocess_cn/SamplesInfo.csv'
+
+
+# Load data ---------------------------------------------------------------
 
 eventDataFrame <- read.csv(mutation_datapath)
 eventDataFrame <- eventDataFrame[!is.na(eventDataFrame$case_control),]
 SampleSheet <- read.csv(meta_datapath)
-rownames(SampleSheet) <- SampleSheet$patient_id
 gisticRegs <- read.csv(gistic_regs_datapath)
 SampleSheet_CN <- as.data.frame(read_tsv(meta_cn_datapath))
+
+SampleSheet<-SampleSheet[SampleSheet$patient_id%in%SampleSheet_CN$patient_id,]
+SampleSheet_CN<-SampleSheet_CN[SampleSheet_CN$patient_id%in%SampleSheet$patient_id,]
 
 GenesPanel <- readRDS('./data/GenesPanel.RDS')
 
@@ -98,6 +103,7 @@ print(oncoPrint(geneMatrixCN_annot[number_cooccur$Muts,], alter_fun = alter_fun)
 dev.off()
 
 #case control comes
+rownames(SampleSheet) <- SampleSheet$patient_id
 pheno <- SampleSheet[colnames(geneMatrixCN),'case_control']
 caco <- CaseControlCOME(fishertest, geneMatrix = geneMatrixCN, pheno = pheno)
 write.table(caco, './results/come/come_fisher_cn_caco.tsv', sep = '\t',quote = F, row.names = F)

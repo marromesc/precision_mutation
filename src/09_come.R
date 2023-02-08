@@ -14,7 +14,7 @@ library(circlize)
 source('./lib/somaticInteractions.R')
 source('./lib/mutCountMatrix.R')
 
-mutation_datapath <- './results/Filtered_Mutations_Compiled.csv'
+mutation_datapath <- './results/Filtered_Mutations_Compiled_5%.csv'
 meta_datapath <- './results/SampleSheet.csv'
 gistic_regs_datapath <- '/home/maria/albyn/precision-CaseControl/data/copynumber/gistic_regs.csv'
 meta_cn_datapath <- '/home/maria/albyn/precision-CaseControl/Tables/SamplesInfo_CN.csv'
