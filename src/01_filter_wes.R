@@ -5,11 +5,16 @@
 
 setwd('/mnt/albyn/maria/precision_mutation')
 
+system('mkdir ./results/dmdscv')
+
 library(tidyr)
 library(dplyr)
 library(stringr)
 library(gridExtra)
 library(biomaRt)
+library(dndscv)
+library(ggplot2)
+library(ggpubr)
 
 source('./lib/readMetadata.R')
 source('./lib/readMutect.R')
@@ -17,7 +22,7 @@ source('./lib/MyNumeric.R')
 source('./lib/GetCosmicNumber.R')
 source('./lib/filterByBed.R')
 
-openclinica_datapath <- './data/updated_20221114_clinicaldata_caco_genomic_samples.xlsx'
+openclinica_datapath <- '/mnt/albyn/common/master/updated_Sloane_20221114_clinicaldata_caco_genomic_samples.xlsx'
 qc_datapath <- './data/WES/20221102_DCIS_Precision_WES_sampleInfo_by_XiaogangWu.xlsx'
 wes_datapath <- '/mnt/albyn/maria/prj_precision/wes/vcf_annovar/'
 
@@ -169,9 +174,6 @@ df_mutect <- df_mutect[-which(MyNumeric(df_mutect$t_depth) < 15 & df_mutect$hots
 df_mutect <- df_mutect[-which(MyNumeric(df_mutect$n_depth) < 10 & df_mutect$hotspot == 'FALSE'),]
 df_mutect <- df_mutect[-which(MyNumeric(df_mutect$normal_af) >= 0.01 & df_mutect$hotspot == 'FALSE'),]
 
-# removing synonymous snps
-df_mutect <- df_mutect[!df_mutect$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
-
 # filtering exonic and splicing
 df_mutect <- df_mutect[df_mutect$func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'),]
 df_mutect$func.knowngene <- ifelse(df_mutect$func.knowngene == 'exonic;splicing', 'exonic', df_mutect$func.knowngene)  # "splicing" in ANNOVAR is defined as variant that is within 2-bp away from an exon/intron boundary by default, but the threshold can be changed by the --splicing_threshold argument. Before Feb 2013, if "exonic,splicing" is shown, it means that this is a variant within exon but close to exon/intron boundary; this behavior is due to historical reason, when a user requested that exonic variants near splicing sites be annotated with splicing as well. However, I continue to get user emails complaining about this behavior despite my best efforts to put explanation in the ANNOVAR website with details. Therefore, starting from Feb 2013 , "splicing" only refers to the 2bp in the intron that is close to an exon, and if you want to have the same behavior as before, add -exonicsplicing argument.
@@ -227,6 +229,14 @@ if(!is.null(to_remove)){
   df <- df[-to_remove,]
 }
 
+# export filtered mutations with synonymous SNV
+df_mutect_dNdS <- df_mutect[-which(as.numeric(df_mutect$tumor_f) < 0.05 & df_mutect$hotspot == 'FALSE'),]; dim(df_mutect)
+saveRDS(df_mutect_dNdS, "./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%_dNdS.rds")
+write.table(df_mutect_dNdS, './data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%_dNdS.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
+# removing synonymous snps
+df_mutect <- df_mutect[!df_mutect$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
+
 df_mutect_discovery <- df_mutect
 
 # export filtered mutations
@@ -266,6 +276,7 @@ df_melbourne <- readMutect(paste0(wes_datapath, "SLO3_mutect_pindel/SLO3/pindel"
 
 # merge data
 df_pindel <- rbind(df_duke, df_nki, df_sloane, df_melbourne); dim(df_pindel)
+df_pindel_no_filt <- as.data.frame(df_pindel_no_filt)
 df_pindel$tumor_name <- gsub('Futreal-Precision-clonalrela-','',gsub('AFutreal-PRECISION-Heterogeneity-','',gsub('ESawyer-PrecDCIS-DNA-','',gsub('Lips-PRECISION-NKIWES2-', '', gsub('Lips-PRECISION-NKIWES3-', '', gsub('Lips-PRECISION-NKIWES2-','',gsub('LEsther-PRECISION-NKIWES4-', '', gsub('DShelleyHwang-PRECISION-WES-' ,'' , df_pindel$sample_name))))))))
 
 # add clinical data
@@ -295,28 +306,25 @@ df_pindel <- df_pindel %>% mutate(key = paste0(chrom, ":", start, "-", end, ":",
                                                                                                                        n_depth = n_ref_count + n_alt_count)
 
 # filter variants in gene panel
-df_pindel <- filterByBed(anned=df_pindel, bed=bed, chrom = 'chr', start = 'start', end = 'end')
+df_pindel <- filterByBed(anned=df_pindel, bed=bed, chrom = 'chr', start = 'start', end = 'end'); dim(df_pindel)
 
 # remove mutations with low coverage
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$t_depth) < 15 & df_pindel$hotspot == 'FALSE'),]
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$n_depth) < 10 & df_pindel$hotspot == 'FALSE'),]
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$normal_af) >= 0.01 & df_pindel$hotspot == 'FALSE'),]
-
-# filter non synonymous mutations
-df_pindel <- df_pindel[!df_pindel$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown'),]
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$t_depth) < 15 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$n_depth) < 10 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$normal_af) >= 0.01 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
 
 # filtering exonic and splicing
-df_pindel <- df_pindel[df_pindel$func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing'),]
+df_pindel <- df_pindel[which(df_pindel$func.knowngene %in% c('exonic', 'splicing', 'exonic;splicing')),]; dim(df_pindel)
 df_pindel$func.knowngene <- ifelse(df_pindel$func.knowngene == 'exonic;splicing', 'exonic', df_pindel$func.knowngene)  # "splicing" in ANNOVAR is defined as variant that is within 2-bp away from an exon/intron boundary by default, but the threshold can be changed by the --splicing_threshold argument. Before Feb 2013, if "exonic,splicing" is shown, it means that this is a variant within exon but close to exon/intron boundary; this behavior is due to historical reason, when a user requested that exonic variants near splicing sites be annotated with splicing as well. However, I continue to get user emails complaining about this behavior despite my best efforts to put explanation in the ANNOVAR website with details. Therefore, starting from Feb 2013 , "splicing" only refers to the 2bp in the intron that is close to an exon, and if you want to have the same behavior as before, add -exonicsplicing argument.
 
 # remove mutations in esp6500 database
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$esp6500siv2_all) >= 0.01 & df_pindel$hotspot == 'FALSE'),]
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$esp6500siv2_all) >= 0.01 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
 
 # remove mutations in exac database
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$exac_all) >= 0.01 & df_pindel$hotspot == 'FALSE'),]
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$exac_all) >= 0.01 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
 
 # remove mutations in 100G database
-df_pindel <- df_pindel[-which(MyNumeric(df_pindel$x1kg2015aug_max) >= 0.01 & df_pindel$hotspot == 'FALSE'),]
+df_pindel <- df_pindel[-which(MyNumeric(df_pindel$x1kg2015aug_max) >= 0.01 & df_pindel$hotspot == 'FALSE'),]; dim(df_pindel)
 
 #vaf comparison
 png('./results_per_platform/WES/t_vafVStumor_f_Pindel.png')
@@ -343,14 +351,34 @@ for(i in Ind){
 }
 
 if(!is.null(to_remove)){
-  df <- df[-to_remove,]
+  df_pindel <- df_pindel[-to_remove,]
 }
 
 # remove tandem duplications
-df_pindel_notds <- df_pindel[!df_pindel$type %in% c("TD"),]; dim(df_pindel); dim(df_pindel_notds) 
+df_pindel_notds <- df_pindel[df_pindel$type!="TD",]; dim(df_pindel); dim(df_pindel_notds) 
 
 # filter for strand bias
-df_pindel_notds1 <- df_pindel_notds[df_pindel_notds$supportup >= 2 & df_pindel_notds$supportdown >=2,]
+df_pindel_notds1 <- df_pindel_notds[df_pindel_notds$supportup >= 2 & df_pindel_notds$supportdown >=2,]; dim(df_pindel_notds1) 
+
+# remove manually found artifact (IGV) - i.e. nonframeshift deletion in ARID1A
+df_pindel_notds1 <- df_pindel_notds1[-which(df_pindel_notds1$gene.knowngene=='ARID1A' & df_pindel_notds1$start==27100182),]
+
+# remove manually found artifact (IGV) - i.e. frameshift deletion in RRP7A; SERHL2
+df_pindel_notds1 <- df_pindel_notds1[-which(df_pindel_notds1$gene.knowngene=='RRP7A;SERHL2' & df_pindel_notds1$start==42898666),]
+
+# remove manually found artifact (IGV) - i.e. frameshift deletion in PRSS1; TCRBV5S1A1T
+df_pindel_notds1 <- df_pindel_notds1[-which(df_pindel_notds1$gene.knowngene=='PRSS1;TCRBV5S1A1T' & df_pindel_notds1$start==142459917),]
+
+# remove manually found artifact (IGV) - i.e. frameshift deletion in CDK11A; CDK11B
+df_pindel_notds1 <- df_pindel_notds1[-which(df_pindel_notds1$gene.knowngene=='CDK11A;CDK11B;MMP23A;SLC35E2B' & df_pindel_notds1$start==1582541),]
+
+# export filtered mutations
+df_pindel_notds1_dNdS <- df_pindel_notds1[-which(as.numeric(df_pindel_notds1$t_vaf) < 0.05 & df_pindel_notds1$hotspot == 'FALSE'),]; dim(df_pindel_notds1)
+saveRDS(df_pindel_notds1_dNdS, "./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_5%_dNdS.rds")
+write.table(df_pindel_notds1_dNdS, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_5%_dNdS.txt', sep = '\t', quote = FALSE, row.names = FALSE)
+
+# filter non synonymous mutations/unknown
+df_pindel_notds1 <- df_pindel_notds1[!df_pindel_notds1$exonicfunc.knowngene %in% c("synonymous SNV", 'unknown') & !is.na(df_pindel_notds1$exonicfunc.knowngene),]
 
 # export filtered mutations
 df_pindel_notds1_discovery <- df_pindel_notds1 
@@ -381,8 +409,6 @@ write.table(df_pindel_notds1_5, './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filte
 
 
 # Mutation frequency ------------------------------------------------------------
-
-library(dplyr); library(ggplot2); library(ggpubr)
 
 #mutect
 
@@ -552,3 +578,20 @@ ggplot(df, aes(x = reorder(Var1, -Freq), y = Freq)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
   theme(axis.text.x = element_text(angle = 90))
 dev.off()
+
+
+# dNdS analysis -----------------------------------------------------------
+
+# read filtered mutations including synonymous
+mutations <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Mutect_Filtered_discovery_5%_dNdS.rds') %>% dplyr::select(sampleID=patient_id, chr, pos = start, ref = ref_allele, mut = alt_allele)
+indels <- readRDS('./data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_5%_dNdS.rds') %>% dplyr::select(sampleID=patient_id, chr, pos = start, ref = refs, mut = sams)
+mutations_all <- rbind(mutations, indels)
+
+# formatting
+dndsout_muts_indels <- dndscv(mutations_all)
+names(dndsout_muts_indels)
+
+sel_cv_muts_indels = dndsout_muts_indels$sel_cv
+print(sel_cv_muts_indels, digits = 3)
+
+write.csv(print(sel_cv_muts_indels, digits = 3), './results/dmdscv/sel_cv_mutectandpindel.csv', quote = F, row.names = F)
