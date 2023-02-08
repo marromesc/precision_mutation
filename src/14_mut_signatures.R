@@ -7,6 +7,7 @@ system('mkdir ./results/mut_signatures')
 
 library(maftools)
 library(data.table)
+library(dplyr)
 library("BSgenome.Hsapiens.UCSC.hg19")
 
 wes_indel_datapath <- './data/WES/DCIS_Precision_CaCo_WES_Pindel_Filtered_discovery_5%.rds'
@@ -24,7 +25,7 @@ eventDataFrame_mutect <- readRDS(wes_mutect_datapath) %>% dplyr::mutate(Hugo_Sym
                                                                         Variant_Classification=ifelse(exonicfunc.knowngene=='nonsynonymous SNV', 'Missense_Mutation',
                                                                                                       ifelse(exonicfunc.knowngene%in%c('stopgain','stoploss'), 'Nonsense_Mutation',
                                                                                                              ifelse(exonicfunc.knowngene=='.', 'Splice_Site','NoData'))), 
-                                                                        Variant_Type='SNP', Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS=dbsnp_site,
+                                                                        Variant_Type='SNP', Reference_Allele=ref_allele, Tumor_Seq_Allele1=ref_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS=dbsnp_site,
                                                                         Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
                                                                         t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=tumor_f, n_vaf=normal_af,
                                                                         SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
@@ -45,7 +46,7 @@ eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate(Hugo_Symbo
                                                                                                                          ifelse(exonicfunc.knowngene=='nonframeshift insertion', 'In_Frame_Ins',
                                                                                                                                 ifelse(exonicfunc.knowngene=='frameshift insertion', 'Frame_Shift_Ins', 'NoData')))))), 
                                                                       Variant_Type=ifelse(ref_allele=='0' & alt_allele=='-', 'DEL',
-                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=alt_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
+                                                                                          ifelse(ref_allele=='-' & alt_allele!='-', 'INS', 'NoData')), Reference_Allele=ref_allele, Tumor_Seq_Allele1=ref_allele, Tumor_Seq_Allele2=alt_allele, dbSNP_RS='NoData',
                                                                       Tumor_Sample_Barcode=sample_name_pdcis, Matched_Norm_Sample_Barcode=sample_name_normal, 
                                                                       t_depth, t_ref_count, t_alt_count, n_depth, n_ref_count, n_alt_count, t_vaf=t_vaf, n_vaf=normal_af,
                                                                       SIFT=sift_pred, PolyPhen=polyphen2_hvar_pred, GMAF=x1kg2015aug_max, CLIN_SIG=clinsig, ExAC_AF=exac_all,
@@ -68,5 +69,18 @@ tnm = trinucleotideMatrix(maf = maf, prefix = 'chr', add = TRUE, ref_genome = "B
 write.csv(tnm[[2]], './results/mut_signatures/mut_signatures.csv', quote = F, row.names = F)
 
 
+# Load data for Signal ----------------------------------------------------
 
+# preparing input for signal mutational analysis https://signal.mutationalsignatures.com
+
+eventDataFrame_mutect <- readRDS(wes_mutect_datapath) %>% dplyr::mutate('Sample name'=patient_id, Chromosome=chr, Position=start, 
+                                                                        'Original base'=ref_allele, 'Mutated base'=alt_allele) %>% dplyr::select('Sample name', Chromosome, Position, 'Original base', 'Mutated base')
+
+eventDataFrame_indel <- readRDS(wes_indel_datapath) %>% dplyr::mutate('Sample name'=patient_id, Chromosome=chr, Position=start, 
+                                                                      'Original base'=ref_allele, 'Mutated base'=alt_allele) %>% dplyr::select('Sample name', Chromosome, Position, 'Original base', 'Mutated base')
+
+eventDataFrame_wes <- rbind(eventDataFrame_mutect, eventDataFrame_indel)
+eventDataFrame_wes <- eventDataFrame_wes[eventDataFrame_wes$`Sample name` == 'PRE_SLO4673',]
+
+write.csv(eventDataFrame_wes, './results/mut_signatures/input_signal.csv', quote = F, row.names = F)
 
